@@ -25,10 +25,10 @@ Not released: no PDF in `releases/`. Every number is taken from
   base-fee burn and the net-supply dynamic; D10 staking and D11 governance
   parameters; D12 Solidity vesting (team 10 % liquid + 90 % cliff-and-linear,
   revocable; community tranches non-revocable).
-- Validator set: ten independent operators at genesis, `max_validators` 30,
-  admission permissioned via `MsgCreateValidator` disabled in circuit-breaker
-  genesis state (D7 as re-decided 2026-09-20, D16), identical on testnet-1
-  and mainnet; a staged roadmap for opening the set with dates and triggers
+- Validator set: ten foundation-run validators at genesis (centralised and
+  permissioned, stated plainly), `max_validators` 30, admission of independent
+  operators via `MsgCreateValidator` disabled in circuit-breaker genesis state
+  (D7 as re-decided 2026-09-20, D16), identical on testnet-1 and mainnet; a staged roadmap for opening the set with dates and triggers
   left as placeholders.
 - Bridges and value ceiling: no bridge on day one (D8) and the four-step
   opening sequence; the safety rails — circuit breaker (D14), IBC rate limiting
