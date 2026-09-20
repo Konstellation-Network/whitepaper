@@ -1,0 +1,382 @@
+\section{Tokenomics}
+\label{sec:tokenomics}
+
+Every number in this section is taken from the tokenomics record
+(\code{TOKENOMICS.md}), which is the single source of truth for the chain's
+economic parameters. Where the record and the running code disagree, the code
+is what validators execute and the record is corrected; this document is
+re-released when a number moves.
+
+\subsection{The \kash{} token}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Symbol & \kash{} \\
+Base denomination & \esp{}, 18 decimals (1\,\kash{} $= 10^{18}$\,\esp) \\
+Gas token & \kash{} --- the same asset; there is no second token \\
+Genesis supply & \textbf{1\,000\,000\,000 \kash{}} \\
+Maximum supply & uncapped (\code{x/mint} \code{max\_supply = 0}); see \S\ref{sec:netsupply} \\
+Uses & gas, staking and delegation, governance deposits and voting \\
+\bottomrule
+\end{tabular}
+\caption{The token (TOKENOMICS \S1).}
+\end{table}
+
+\subsection{Issuance}
+\label{sec:issuance}
+
+New \kash{} is minted every block as a pure function of how much \kash{} is
+bonded to validators, modelled on Ethereum's post-merge issuance
+(\dref{D4}):
+
+\begin{equation}
+\text{annual issuance (\kash)} = F \times \sqrt{\text{bonded \kash}},
+\qquad F = 1265
+\label{eq:issuance}
+\end{equation}
+\begin{equation}
+\text{staking yield (APR)} = \frac{F}{\sqrt{\text{bonded \kash}}}
+\label{eq:apr}
+\end{equation}
+
+There is \textbf{no} bonded-ratio target and no rate-of-change loop. The Cosmos
+SDK's default minter, which steers inflation within a 7--20\,\% band toward a
+67\,\% bonded ratio, is switched off: those parameters are zeroed in genesis and
+ignored. The curve is implemented as the stock \code{x/mint} module's
+\code{MintFn} hook, so it adds no custom module to the chain.
+
+$F$ was chosen against the 1\,B \kash{} genesis supply so that the curve pays
+8\,\% at 25\,\% bonded and 4\,\% with everything bonded:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}rrrrr@{}}
+\toprule
+Bonded share & Bonded \kash{} & Staking APR & Issued / year & Issued as \% of supply \\
+\midrule
+10\,\% & 100\,M & 12.65\,\% & 12.65\,M & 1.27\,\% \\
+25\,\% & 250\,M & \textbf{8.00\,\%} & \textbf{20.0\,M} & \textbf{2.00\,\%} \\
+50\,\% & 500\,M & 5.66\,\% & 28.3\,M & 2.83\,\% \\
+75\,\% & 750\,M & 4.62\,\% & 34.6\,M & 3.46\,\% \\
+100\,\% & 1\,B & 4.00\,\% & 40.0\,M & 4.00\,\% \\
+\bottomrule
+\end{tabular}
+\caption{Issuance and yield against bonded stake, $F = 1265$, 1\,B supply
+(TOKENOMICS \S2). At the planned genesis bonding of $\approx$120\,M \kash{}
+(\S\ref{sec:allocation}) the curve pays $\approx$11.5\,\%.}
+\label{tab:issuance}
+\end{table}
+
+Properties of the curve:
+
+\begin{itemize}
+\item Doubling bonded stake raises total issuance by $\sqrt{2}$ ($\times 1.41$)
+  and cuts per-staker yield by the same factor. Yield never reaches zero and is
+  never negative.
+\item Because issuance grows sub-linearly in stake, the inflation rate
+  (issued $\div$ supply) is bounded above by $F / \sqrt{\text{supply}}$ ---
+  4\,\% of the genesis supply with everything bonded.
+\item The yield is chain-wide. Rewards are distributed pro-rata by bonded stake,
+  so the size of the active validator set does not change anyone's yield and
+  the curve adds no concentration incentive of its own.
+\item $F$ is a \textbf{protocol constant}, in the sense of Ethereum's
+  \code{BASE\_REWARD\_FACTOR}: changing it is a coordinated software upgrade
+  reviewed and voted as such, not a governance parameter change.
+\item Per-block provision is the annual figure divided by \code{blocks\_per\_year},
+  which \emph{is} a governance parameter and must track real block time. It is
+  currently set for $\approx$1.5\,s blocks (21\,038\,400) and will be re-derived
+  from observed \code{testnet-1} block time before mainnet; if blocks are
+  slower than assumed, realised issuance is proportionally lower than
+  Table~\ref{tab:issuance}, and vice versa.
+\end{itemize}
+
+\subsubsection{Where issued \kash{} goes}
+
+Minted coins enter the fee collector and are swept by the distribution module
+every block, together with transaction tips (\S\ref{sec:fees}):
+
+\begin{enumerate}
+\item A \textbf{community tax} of \textbf{2\,\%} goes to the on-chain community
+  pool, spendable only by governance proposal.
+\item The remainder goes to validators pro-rata by bonded stake. Each validator
+  takes its commission (chain-wide floor 5\,\%, \dref{D10}) and passes the rest to
+  its delegators pro-rata.
+\end{enumerate}
+
+A delegator's realised yield is therefore approximately
+$\text{APR} \times (1 - 0.02) \times (1 - \text{commission})$; at 25\,\% bonded
+with a 5\,\% commission validator, $8.00\,\% \times 0.98 \times 0.95 \approx
+7.45\,\%$.
+
+\subsection{Fees and burn}
+\label{sec:fees}
+
+Konstellation runs EIP-1559 for every transaction, EVM and Cosmos alike
+(\dref{D5}).
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}llL@{}}
+\toprule
+Parameter & Value & Note \\
+\midrule
+Initial base fee & $10^{9}$ \esp{} per gas (1 gwei-equivalent) & \code{cosmos/evm} default; adjusts from block~1 \\
+Base-fee change denominator & 8 & at most $\pm$12.5\,\% per block, as Ethereum \\
+Elasticity multiplier & 2 & target utilisation is half the block gas limit \\
+\code{min\_gas\_price} (base-fee floor) & 0 & no protocol floor; the base fee may decay toward zero when the chain is idle. Governance parameter \\
+\code{min\_gas\_multiplier} & 0.5 & a block-level floor on the gas-wanted figure the fee market records, preventing a proposer from pushing the base fee down by over-reporting; not a user-facing charge \\
+\bottomrule
+\end{tabularx}
+\caption{Fee-market parameters (TOKENOMICS \S3).}
+\end{table}
+
+Every transaction pays $\text{gasUsed} \times (\text{baseFee} + \text{tip})$.
+Of that:
+
+\begin{itemize}
+\item \textbf{$\text{baseFee} \times \text{gasUsed}$ is burned} --- destroyed at
+  the end of every block, before the distribution module can see it. This is
+  Ethereum semantics and replaces the Cosmos SDK default of routing the base fee
+  to validators.
+\item \textbf{The tip} (priority fee) goes to validators and delegators through
+  the same pipeline as issuance, including the 2\,\% community tax.
+\end{itemize}
+
+For Cosmos-SDK transactions, which prepay for gas \emph{wanted}, the burn is still
+computed on gas \emph{used}; the $\text{baseFee} \times (\text{gasWanted} -
+\text{gasUsed})$ slack goes to validators like a tip.
+
+\subsection{Net supply}
+\label{sec:netsupply}
+
+\begin{equation}
+\Delta\,\text{supply per block} = \text{issuance}(\text{bonded}) - \text{baseFee} \times \text{gasUsed}
+\end{equation}
+
+Burn scales with usage and congestion; issuance scales with stake. Order of
+magnitude, at 1.5\,s blocks ($\approx$21\,M blocks per year):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}rrr@{}}
+\toprule
+Average base fee & Average gas per block & Burned per year \\
+\midrule
+1 gwei & 1\,M & 21\,k \kash{} \\
+1 gwei & 10\,M & 210\,k \kash{} \\
+10 gwei & 10\,M & 2.1\,M \kash{} \\
+50 gwei & 20\,M & 21\,M \kash{} \\
+\bottomrule
+\end{tabular}
+\caption{Burn against usage (TOKENOMICS \S3.1). ``gwei'' here means
+$10^{9}$ \esp{}.}
+\end{table}
+
+Against $\approx$20\,M \kash{} per year issued at 25\,\% bonded, the chain is
+\textbf{net inflationary until sustained demand pushes the base fee into the
+tens of gwei at high utilisation} --- the same shape as Ethereum, where net
+deflation has only occurred in periods of heavy use. This is expected and is
+not a design flaw: burn is a function of demand for block space; issuance is
+a function of the security budget.
+
+\subsection{Staking parameters}
+\label{sec:staking}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Consensus & delegated proof of stake (\code{x/staking}) \\
+Active set (\code{max\_validators}) & \textbf{30} \\
+Unbonding period & \textbf{21 days} \\
+Minimum validator commission & \textbf{5\,\%} \\
+Double-sign slash & \textbf{5\,\%} of stake; permanent tombstone \\
+Downtime slash & \textbf{0.01\,\%} of stake \\
+Downtime definition & missing more than 50\,\% of a 100-block window (SDK default) \\
+Downtime jail & 10 minutes, then an unjail transaction (SDK default) \\
+Launch validator set & 5--10 self-run nodes, permissioned at launch (\dref{D7}, \S\ref{sec:validators}) \\
+\bottomrule
+\end{tabular}
+\caption{Staking and slashing parameters (\dref{D10}, TOKENOMICS \S4). Slashed
+stake is burned.}
+\end{table}
+
+The active-set cap of 30 is a deliberate DPoS choice, not an SDK default
+carried over; the roadmap for raising it is in \S\ref{sec:validators}.
+
+\subsection{Governance parameters}
+\label{sec:governance}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}llL@{}}
+\toprule
+Parameter & Mainnet & Note \\
+\midrule
+Minimum proposal deposit & \textbf{1\,000 \kash{}} & to enter the voting period. \code{testnet-1}: 10 \\
+Expedited minimum deposit & \textbf{5\,000 \kash{}} & \code{testnet-1}: 50 \\
+Maximum deposit period & 2 days & SDK default \\
+Voting period & \textbf{3 days} & to be lengthened as the validator set decentralises. \code{testnet-1}: 2 hours \\
+Expedited voting period & 1 day & SDK default. \code{testnet-1}: 30 minutes \\
+Quorum & \textbf{33.4\,\%} & of bonded stake \\
+Pass threshold & \textbf{50\,\%} & of non-abstain votes \\
+Expedited pass threshold & 66.7\,\% & SDK default \\
+Veto threshold & 33.4\,\% & SDK default \\
+Deposit on veto & \textbf{burned} & \\
+Deposit on failed quorum, rejection or pass & \textbf{refunded} & \\
+\bottomrule
+\end{tabularx}
+\caption{Governance parameters (\dref{D11}, TOKENOMICS \S5). The mainnet values
+are selected only by the exact chain-id \code{konstellation-1}; every other
+chain-id, including local development, gets the testnet profile.}
+\end{table}
+
+Deposits are refunded on every outcome except veto, so \textbf{the deposit is a
+spam bond, not a cost}: it decides who can afford to \emph{propose}, not what
+proposing costs. 1\,000 \kash{} is $10^{-6}$ of the genesis supply --- inside
+what any serious proposer holds, and well above what a spammer wants locked for
+up to five days per proposal. All values in the table are governance parameters
+and are adjustable by proposal.
+
+Governance can also override the compliance authority
+(\S\ref{sec:compliance}), set and remove IBC rate limits (\S\ref{sec:rails}),
+and is the authority of the circuit breaker (\dref{D14}).
+
+\subsection{Genesis allocation}
+\label{sec:allocation}
+
+On a 1\,000\,000\,000 \kash{} supply (TOKENOMICS \S7, decided 2026-09-15) the
+allocation is given in Table~\ref{tab:allocation}, with the community bucket
+split out in Table~\ref{tab:community}.
+
+\begin{table}[tbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.6cm}rrp{1.6cm}LL@{}}
+\toprule
+Bucket & Share & \kash{} & \raggedleft Liquid at genesis & Vesting / release & Held by \\
+\midrule
+Founding team \& early contributors & 22\,\% & 220\,M & \raggedleft 0 & 12-month cliff, then linear over 36 months (4 years total) & Solidity vesting contracts, one per person (\dref{D12}) \\
+Community \& developers & 33\,\% & 330\,M & \raggedleft 30\,M & released programmatically over 5 years, front-loaded & see Table~\ref{tab:community} \\
+Treasury (foundation) & 25\,\% & 250\,M & \raggedleft 50\,M & 20\,\% liquid at genesis; remainder linear over 48 months & foundation multisig ($\geq$3-of-5); vesting contract for the locked part \\
+Validator bootstrap \& staking & 12\,\% & 120\,M & \raggedleft 120\,M, bonded & none --- bonded at genesis via gentx & launch validators' operating entities (\dref{D7}) \\
+Liquidity \& public distribution & 8\,\% & 80\,M & \raggedleft 80\,M & none & foundation, earmarked for DEX liquidity, market making and any public sale \\
+\midrule
+ & 100\,\% & 1\,000\,M & \raggedleft 280\,M (28\,\%) & & \\
+\bottomrule
+\end{tabularx}
+\caption{Genesis allocation.}
+\label{tab:allocation}
+\end{table}
+
+\begin{table}[tbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}lrLL@{}}
+\toprule
+Sub-bucket & Share & Purpose & Steward \\
+\midrule
+Ecosystem \& developer grants & 18\,\% & builders, integrations, tooling, bug bounties & foundation grants committee; large grants ratified by governance \\
+User \& developer incentives & 10\,\% & usage rewards, airdrops, liquidity mining, hackathon prizes & foundation, programme by programme \\
+On-chain community pool seed & 5\,\% & governance-spendable from day one, on top of the 2\,\% tax & the \code{x/distribution} community pool; governance proposals only \\
+\bottomrule
+\end{tabularx}
+\caption{The community \& developers bucket (33\,\%), split.}
+\label{tab:community}
+\end{table}
+
+Why these numbers:
+
+\begin{itemize}
+\item \textbf{Team 22\,\%, fully locked, one-year cliff.} This is the middle of
+  the Layer-1 range and reads as committed rather than extractive. Nothing in
+  the team bucket is sellable in year one.
+\item \textbf{Community 33\,\% is the largest bucket.} Grants and incentives are
+  the actual growth lever for a new EVM chain.
+\item \textbf{Treasury 25\,\%} covers audits (\dref{D9}), infrastructure, legal,
+  listings and multi-year runway; 20\,\% is liquid because those costs start
+  before launch.
+\item \textbf{Validators 12\,\%, bonded at genesis.} $\approx$120\,M bonded on
+  day one gives $\approx$11.5\,\% staking APR from equation~\ref{eq:apr} --- high
+  enough to pull outside delegation in as the set opens (\S\ref{sec:validators}),
+  and falling naturally as it arrives.
+\item \textbf{28\,\% liquid at genesis} (bonded validator stake plus the treasury
+  tranche plus liquidity) is enough float for a functioning market without a
+  supply overhang.
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+End of year & Team & Community & Treasury & Validators & Liquidity & \textbf{Circulating} \\
+\midrule
+genesis & 0 & 30\,M & 50\,M & 120\,M & 80\,M & \textbf{280\,M (28\,\%)} \\
+1 & 0 & 120\,M & 100\,M & 120\,M & 80\,M & \textbf{420\,M (42\,\%)} \\
+2 & 73\,M & 195\,M & 150\,M & 120\,M & 80\,M & \textbf{618\,M (62\,\%)} \\
+3 & 147\,M & 255\,M & 200\,M & 120\,M & 80\,M & \textbf{802\,M (80\,\%)} \\
+4 & 220\,M & 300\,M & 250\,M & 120\,M & 80\,M & \textbf{970\,M (97\,\%)} \\
+5 & 220\,M & 330\,M & 250\,M & 120\,M & 80\,M & \textbf{1\,000\,M (100\,\%)} \\
+\bottomrule
+\end{tabular}
+\caption{Circulating supply by year, issuance excluded; community releases
+front-loaded 30 / 25 / 20 / 15 / 10\,\% (TOKENOMICS \S7).}
+\end{table}
+
+Names and individual amounts within the team bucket are not part of this
+document. \todo{Decide whether the whitepaper will disclose named beneficiaries
+or aggregate only; nothing is recorded either way.}
+
+\subsection{Vesting}
+\label{sec:vesting}
+
+All vesting is implemented in \textbf{Solidity vesting contracts}, not in the
+Cosmos SDK's \code{x/auth} vesting accounts (\dref{D12}). The reason is defensive:
+a 2026 exploit on another Cosmos EVM chain was attributed to a flaw touching
+vesting accounts and balance handling, and SDK vesting accounts add a second,
+protocol-level balance model that every balance-touching path must get right.
+Contracts are auditable in isolation, and a contest-style Solidity audit is a
+good fit for them (\S\ref{sec:audit}).
+
+\begin{itemize}
+\item \textbf{Team grants are revocable.} The foundation multisig may revoke a
+  departing team member's grant; unvested tokens return to the treasury, vested
+  tokens remain the beneficiary's.
+\item \textbf{Treasury and community schedules are not revocable.}
+\item Each team grant is one contract per beneficiary with the cliff-plus-linear
+  schedule in Table~\ref{tab:allocation}.
+\end{itemize}
+
+The vesting contracts are specified but not yet built at the time of this draft
+(\code{contracts/src/vesting/}); their audit is part of the pre-mainnet scope.
+\todo{Confirm the vesting contract design once built: whether the community
+bucket's front-loaded release is a contract schedule or a foundation-executed
+programme, and who holds the revocation key for team grants (the foundation
+multisig is decided; its signer set is not).}
+
+\subsection{Flow of value, end to end}
+
+\begin{figure}[H]
+\small
+\begin{verbatim}
+                    +------------- issuance: F x sqrt(bonded) --------------+
+                    |                                                       v
+users --gas x (base+tip)--> fee collector --- EndBlock: burn base x gasUsed --> (burned)
+                                  |
+                                  +---- next BeginBlock: x/distribution
+                                            |-- 2 % community pool  (gov-spendable)
+                                            +-- 98 % validators, pro-rata by stake
+                                                  |-- commission >= 5 %  -> validator
+                                                  +-- remainder          -> delegators
+\end{verbatim}
+\caption{Flow of value (TOKENOMICS \S6).}
+\end{figure}

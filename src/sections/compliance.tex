@@ -1,0 +1,125 @@
+\section{Compliance}
+\label{sec:compliance}
+
+\legal{This section describes a capability that is built but has not yet had
+legal review. The mechanism is decided (\dref{D6}); the policy under which it
+will be used, the entity that will operate it and its obligations are
+subject to legal review before the chain ships. Nothing here is a
+representation about the regulatory status of the network or its token.}
+
+\subsection{What the chain can do}
+
+Konstellation includes a chain-level compliance module, \code{x/compliance},
+holding two lists (\dref{D6}, ENGINEERING \S10):
+
+\begin{description}[style=nextline]
+\item[An allowlist (\code{isVerified}).] Addresses that an attester has marked
+  as verified. \textbf{The chain never requires allowlisting to transact.} The
+  list exists so that a contract that wants to serve only verified addresses
+  --- a permissioned pool, a regulated asset --- can consult it. Its use is
+  entirely the contract author's choice.
+\item[A blocklist (\code{isFrozen}).] Addresses the chain refuses to transact
+  with. This list is enforced \textbf{chain-wide}: every transaction touching
+  a listed address --- EVM or Cosmos, native \kash{} included --- is refused
+  before execution, at the ante handler, and a synchronous mempool pre-check
+  returns ``address is frozen'' at the JSON-RPC so the sender learns
+  immediately. An incoming IBC transfer to a frozen address is refused at
+  receipt and refunded by the sending chain.
+\end{description}
+
+Both lists are readable from Solidity through a read-only precompile,
+\code{ICompliance}, at the fixed address
+\code{0x0000000000000000000000000000000000000900}, exposing
+\code{isVerified(address)}, \code{isFrozen(address)} and
+\code{status(address)}. Contracts that need to refuse \emph{internal}
+transfers to frozen addresses --- which the ante handler cannot see --- call
+it.
+
+One EVM-specific detail matters for wallets: adding an address to the
+blocklist also clears any EIP-7702 delegation on it. Without that, an
+externally owned account delegated to a smart-account wallet before the freeze
+would still run that wallet's code when an EntryPoint or forwarder called it,
+and a relayer could drain it with an operation the frozen key had signed
+off-chain. Only the 23-byte delegation designator is cleared --- never real
+contract bytecode, so freezing a token contract does not brick its holders ---
+and storage is untouched, so a lifted account is restored by a single new
+authorisation (ENGINEERING \S10, \S\ref{sec:aa}).
+
+\subsection{Who can change the lists, and how fast}
+\label{sec:complianceauth}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}lLL@{}}
+\toprule
+Path & Who & Timing \\
+\midrule
+Scheduled change & the compliance authority (a foundation multisig) & takes effect after an on-chain \textbf{timelock of 24 hours} on mainnet; visible on-chain for the whole delay \\
+Emergency freeze & the compliance authority & takes effect \textbf{immediately}; \textbf{auto-expires after one timelock period} unless ratified by scheduling the permanent add. An address under a live emergency freeze, or within one timelock after it lapsed or was lifted, cannot be emergency-frozen again --- only the scheduled path or governance can hold a freeze past one period \\
+Governance override & any passed governance proposal & can add or remove any entry, cancel any scheduled change, and \textbf{replace the authority} \\
+\bottomrule
+\end{tabularx}
+\caption{Compliance list authority (\dref{D6}). On \code{testnet-1} the authority
+is a development key with short timelocks; on mainnet it is the foundation
+multisig with 24-hour timelocks, set in the network's genesis after legal
+review (ENGINEERING \S18).}
+\end{table}
+
+Every action on either list is an on-chain event. The timelock is bounded in
+code (one minute to ninety days) so that no parameter change can make the
+lists unreachable, and the ratification path is designed so a freeze never
+lapses in the gap between an emergency action and its permanent form. If no
+authority is set, only governance can touch the lists.
+
+\todo{The mainnet compliance authority multisig --- its signers, threshold and
+the legal entity behind it --- is not yet chosen. It is a genesis entry.}
+
+\subsection{What the chain deliberately does not do}
+
+\begin{itemize}
+\item It does not \textbf{reverse} transactions or move balances. There is no
+  protocol-level clawback. The design options for reversal (issuer mint/burn of
+  controlled assets, delayed settlement above a threshold, a per-token clawback
+  role, or a governance state migration) were catalogued during design
+  (ENGINEERING \S10); none is part of this release, and any asset-level control
+  would be the issuer's contract, not the chain's.
+\item It does not require identity to use the chain. The allowlist is opt-in for
+  contracts; it gates nothing at the protocol level.
+\item It does not store personal data. \todo{The engineering record describes a
+  design in which attestations (credential hash, issuer, level, expiry,
+  jurisdiction) are held on-chain and PII off-chain by a licensed provider. Whether
+  the allowlist will carry attestation metadata beyond a boolean, and who the
+  attesters are, is not decided.}
+\end{itemize}
+
+\subsection{The trade-offs, stated in full}
+\label{sec:compliancerisks}
+
+The engineering record requires that the following risks be recorded in this
+document if the chain-wide design was chosen. It was, and they apply without
+qualification (ENGINEERING \S10, \dref{D6}).
+
+\begin{enumerate}
+\item \textbf{The freeze authority becomes the highest-value key on the chain.}
+  It is a multisig from genesis; non-emergency actions are timelocked; every
+  action is logged on-chain; governance can replace it. Those mitigations
+  reduce the risk; they do not remove it. A compromise of the authority could
+  freeze any address for one timelock period before governance could act.
+\item \legal{\textbf{The ability to freeze can create a legal obligation to
+  freeze}, across multiple jurisdictions. Operating the authority is an
+  ongoing, staffed function with liability attached, not a one-time deployment.
+  Who bears that obligation, under which laws, and with what process for
+  requests from authorities, has not been determined.}
+\item \textbf{It permanently changes the chain's positioning.} Some developers
+  will not build on a chain with a freeze switch; some institutions will not
+  touch one without. Konstellation has chosen the second audience knowingly.
+  Readers who need a chain with no such control should treat this as
+  disqualifying rather than expect it to be removed.
+\end{enumerate}
+
+\legal{\todo{Legal review of \S\ref{sec:compliance} as a whole is required
+before this document is released and before the module ships on mainnet:
+the operating policy for the lists, the request-handling process, the
+disclosure language above, and the regulatory implications of the allowlist
+and any attestation scheme.}}

@@ -1,0 +1,70 @@
+\section{Decision record}
+\label{app:decisions}
+
+Every \dref{D}-numbered reference in this document points to a decision
+recorded in the engineering record (\code{ENGINEERING.md} \S11). The numeric
+parameters those decisions produced live in \code{TOKENOMICS.md}. Both files
+are in the organisation's root repository. A decision is changed only by a
+recorded human decision in those files; this document is re-released when one
+changes.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}llL@{}}
+\toprule
+Decision & Date & Summary \\
+\midrule
+\dref{D1} & 2026-09-13 & EIP-155 chain IDs: mainnet 5667, testnet 56671 (local development 56670) \\
+\dref{D2} & 2026-09-13 & Token \kash{}, base denomination \esp{}, 18 decimals, no \code{x/precisebank} \\
+\dref{D3} & 2026-09-13 & Bech32 prefix \code{kons} \\
+\dref{D4} & 2026-09-15 & Stake-based issuance, $F \times \sqrt{\text{bonded}}$, $F = 1265$ on a 1\,B supply; no bonded-ratio loop; \code{x/mint} \code{MintFn}, no custom module \\
+\dref{D5} & 2026-09-15 & EIP-1559 base fee burned at EndBlock; tips to validators \\
+\dref{D6} & 2026-09-15 & \code{x/compliance}: chain-wide blocklist enforcement, opt-in allowlist, precompile at \code{0x\ldots0900}; foundation multisig authority, 24\,h timelock, emergency freeze with auto-expiry, governance override. Legal review before shipping \\
+\dref{D7} & 2026-09-15 & 5--10 self-run validators, permissioned at launch, stated honestly; published roadmap for opening the set \\
+\dref{D8} & 2026-09-15 & No bridge on day one; soak $\to$ build and audit $\to$ calibrate caps $\to$ open with caps in the contract \\
+\dref{D9} & 2026-09-15 & Audit firm Informal Systems; scope is the delta \\
+\dref{D10} & 2026-09-14 & DPoS; \code{max\_validators} 30, unbonding 21\,d, minimum commission 5\,\%, downtime slash 0.01\,\%, double-sign slash 5\,\% \\
+\dref{D11} & 2026-09-14 / 2026-09-15 & Governance: deposit 1\,000 / expedited 5\,000 \kash{}, voting 3\,d, quorum 33.4\,\%, threshold 50\,\%, deposit refunded except on veto \\
+\dref{D12} & 2026-09-15 & Solidity vesting contracts, not \code{x/auth} vesting accounts; team grants revocable \\
+\dref{D13} & 2026-09-14 & Application-side EVM mempool on (upstream default) \\
+\dref{D14} & 2026-09-19 & Circuit breaker: SDK \code{contrib/x/circuit}; governance authority, 3-of-5 operations multisig super-admin via genesis \\
+\dref{D15} & 2026-09-19 & Own \code{x/ratelimit} for IBC value flow; governance-set per-channel quotas \\
+\bottomrule
+\end{tabularx}
+\caption{Decisions cited in this document.}
+\end{table}
+
+Also cited, as engineering policy rather than numbered decisions: the
+never-fork constraint (ENGINEERING \S2.1--\S2.3), BlockSTM off at launch
+(\S2.5, decided 2026-09-13), the genesis allocation (TOKENOMICS \S7, decided
+2026-09-15), the 2\,\% community tax and the 0 \code{min\_gas\_price} (decided
+2026-09-15), and the launch sequence (ENGINEERING \S15).
+
+\section{Glossary}
+
+\begin{description}[style=nextline]
+\item[Ante handler] Code that runs before a transaction's messages execute:
+  signature verification, nonce checks, fee deduction, and on this chain the
+  compliance and circuit-breaker checks. Its ordering is security-critical.
+\item[Base fee] The EIP-1559 per-gas price set by the protocol from recent
+  block fullness. Burned on Konstellation.
+\item[Bonded] \kash{} delegated to a validator and subject to the unbonding
+  period and slashing. The input to the issuance curve.
+\item[Circuit breaker] An on-chain control that disables specific message
+  types without halting the chain.
+\item[Cosmovisor] The process manager that swaps node binaries at a
+  governance-set upgrade height.
+\item[EntryPoint] The ERC-4337 singleton contract through which user
+  operations from smart accounts are executed.
+\item[Genesis transaction (gentx)] A pre-signed validator-creation transaction
+  merged into the genesis file, which is how the launch validators are bonded
+  at block zero.
+\item[Preinstall] A contract placed in the genesis state at a fixed address
+  without running its constructor.
+\item[Sentry] A public-facing node that shields a validator, which has no
+  public address of its own.
+\item[Tip] The EIP-1559 priority fee, paid to validators and delegators.
+\item[Tombstone] Permanent removal of a validator from the active set after
+  double-signing.
+\end{description}

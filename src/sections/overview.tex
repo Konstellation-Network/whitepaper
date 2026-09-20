@@ -1,0 +1,89 @@
+\section{Overview}
+\label{sec:overview}
+
+\subsection{What Konstellation is}
+
+Konstellation is a sovereign Layer~1: it runs its own validator set and its own
+consensus, and it is not a rollup, a sidechain or an appchain secured by another
+network. The stack is the Cosmos ``2026.1'' release family --- CometBFT for
+consensus and networking, the Cosmos~SDK for accounts, staking, governance and
+upgrades, \code{ibc-go} for interoperability --- with the EVM execution layer
+supplied by \code{cosmos/evm} (ENGINEERING \S1, \S3).
+
+To a Solidity developer or a wallet user it behaves like an Ethereum-family
+chain: contracts compile and deploy unchanged, the node exposes the standard
+\code{eth\_}, \code{net\_}, \code{web3\_}, \code{debug\_} and \code{txpool\_}
+JSON-RPC namespaces over HTTP and WebSocket, MetaMask signs transactions with an
+EIP-155 chain ID, and Blockscout indexes the result. To a Cosmos operator it is
+a standard SDK application: \code{konstellationd} is a single Go binary, upgrades
+are coordinated by governance and Cosmovisor, and the chain speaks IBC.
+
+The chain is designed to hold real user funds from its first block, secured by a
+validator set of five to ten nodes across several cloud providers and
+jurisdictions. That combination --- real value, a small set --- drives every
+conservative choice in this document: the never-fork policy
+(\S\ref{sec:neverfork}), parallel execution switched off at launch
+(\S\ref{sec:blockstm}), no bridge on day one (\S\ref{sec:bridges}), mandatory
+safety rails before any user money moves (\S\ref{sec:rails}), and a validator
+set that is honestly described as permissioned at launch
+(\S\ref{sec:validators}).
+
+\subsection{Naming and identifiers}
+
+The identifiers below are fixed. The token symbol, base denomination, decimals
+and Bech32 prefix cannot be changed after genesis; the EIP-155 chain IDs are
+replay-protection domains and are enforced by the node software in both
+directions (a known network runs only with its own EVM ID, and a real network's
+EVM ID is refused by any other chain-id) (ENGINEERING \S1, \dref{D1}--\dref{D3}).
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}lLl@{}}
+\toprule
+Item & Value & Decision \\
+\midrule
+Chain (display name) & Konstellation & --- \\
+Node binary & \code{konstellationd} & --- \\
+Token symbol & \kash{} & \dref{D2} \\
+Base denomination & \esp{} (18 decimals; 1\,\kash{} $= 10^{18}$\,\esp) & \dref{D2} \\
+Gas token & \kash{} (the same asset; no wrapped or secondary gas token) & \dref{D2} \\
+Bech32 address prefix & \code{kons} & \dref{D3} \\
+Mainnet network id (Cosmos chain-id) & \code{konstellation-1} & --- \\
+Mainnet EIP-155 chain ID & \textbf{5667} & \dref{D1} \\
+Testnet network id (Cosmos chain-id) & \code{testnet-1} & --- \\
+Testnet EIP-155 chain ID & \textbf{56671} & \dref{D1} \\
+Local development EIP-155 chain ID & 56670 & \dref{D1} follow-up \\
+Genesis supply & 1\,000\,000\,000 \kash{} & TOKENOMICS \S7 \\
+\bottomrule
+\end{tabularx}
+\caption{Fixed identifiers. \esp{} is the on-chain base unit; \kash{} is the
+display unit. Both mainnet and testnet chain IDs were verified absent from the
+\code{ethereum-lists/chains} registry on 2026-09-13 and will be registered there
+before testnet launch.}
+\label{tab:naming}
+\end{table}
+
+The token is natively 18-decimal, matching the EVM's hard requirement for gas
+tokens; no decimal-extension module (\code{x/precisebank}) is wired, and none is
+needed (ENGINEERING \S3, \dref{D2}). \code{WKASH}, an ERC-20 wrapper of the
+native token, is deployed after genesis at a predictable address rather than
+baked into the genesis state; Solidity can also reach the native token through
+the \code{werc20} precompile shipped by \code{cosmos/evm} (ENGINEERING \S6.3).
+
+\subsection{Networks}
+
+One binary and one codebase serve both networks. \code{konstellationd} does not
+know which network it is on beyond the chain-id checks; every difference between
+\code{testnet-1} and \code{konstellation-1} lives in the network's
+\code{genesis.json} or in the deployment environment, and every such difference
+is enumerated in the engineering record (ENGINEERING \S18). Where this document
+gives a parameter that differs on testnet, it says so.
+
+\subsection{How to read this document}
+
+Sections \ref{sec:architecture} to \ref{sec:aa} describe the system.
+Section~\ref{sec:security} describes how it is audited and launched.
+Section~\ref{sec:disclaimers} contains the disclaimers. Appendix~\ref{app:decisions}
+maps every \dref{D}-numbered decision cited in the text to its date. The final
+page lists every open placeholder in this draft.
