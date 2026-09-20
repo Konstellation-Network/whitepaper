@@ -201,7 +201,7 @@ Double-sign slash & \textbf{5\,\%} of stake; permanent tombstone \\
 Downtime slash & \textbf{0.01\,\%} of stake \\
 Downtime definition & missing more than 50\,\% of a 100-block window (SDK default) \\
 Downtime jail & 10 minutes, then an unjail transaction (SDK default) \\
-Launch validator set & 5--10 self-run nodes, permissioned at launch (\dref{D7}, \S\ref{sec:validators}) \\
+Launch validator set & 10 independent operators at genesis, admission permissioned (\dref{D7}, \dref{D16}, \S\ref{sec:validators}); same on \code{testnet-1} and mainnet \\
 \bottomrule
 \end{tabular}
 \caption{Staking and slashing parameters (\dref{D10}, TOKENOMICS \S4). Slashed
@@ -253,24 +253,25 @@ and is the authority of the circuit breaker (\dref{D14}).
 \subsection{Genesis allocation}
 \label{sec:allocation}
 
-On a 1\,000\,000\,000 \kash{} supply (TOKENOMICS \S7, decided 2026-09-15) the
-allocation is given in Table~\ref{tab:allocation}, with the community bucket
-split out in Table~\ref{tab:community}.
+On a 1\,000\,000\,000 \kash{} supply (TOKENOMICS \S7, decided 2026-09-15;
+liquid tranches and community split settled 2026-09-20) the allocation is
+given in Table~\ref{tab:allocation}, with the community bucket split out in
+Table~\ref{tab:community}.
 
 \begin{table}[tbp]
 \centering
 \small
-\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.6cm}rrp{1.6cm}LL@{}}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.4cm}rrp{1.9cm}LL@{}}
 \toprule
 Bucket & Share & \kash{} & \raggedleft Liquid at genesis & Vesting / release & Held by \\
 \midrule
-Founding team \& early contributors & 22\,\% & 220\,M & \raggedleft 0 & 12-month cliff, then linear over 36 months (4 years total) & Solidity vesting contracts, one per person (\dref{D12}) \\
-Community \& developers & 33\,\% & 330\,M & \raggedleft 30\,M & released programmatically over 5 years, front-loaded & see Table~\ref{tab:community} \\
-Treasury (foundation) & 25\,\% & 250\,M & \raggedleft 50\,M & 20\,\% liquid at genesis; remainder linear over 48 months & foundation multisig ($\geq$3-of-5); vesting contract for the locked part \\
-Validator bootstrap \& staking & 12\,\% & 120\,M & \raggedleft 120\,M, bonded & none --- bonded at genesis via gentx & launch validators' operating entities (\dref{D7}) \\
+Founding team \& early contributors & 22\,\% & 220\,M & \raggedleft 22\,M (10\,\% of each grant) & remaining 90\,\%: 12-month cliff, then linear over 36 months (4 years total) & liquid part paid to each member's address in genesis; locked part in a revocable vesting wallet, one per person (\dref{D12}) \\
+Community \& developers & 33\,\% & 330\,M & \raggedleft 50\,M (the community-pool seed) & remaining 280\,M released over 5 years, front-loaded & see Table~\ref{tab:community} \\
+Treasury (foundation) & 25\,\% & 250\,M & \raggedleft 50\,M & 20\,\% liquid at genesis; remainder linear over 48 months & foundation multisig ($\geq$3-of-5); vesting wallet for the locked part \\
+Validator bootstrap \& staking & 12\,\% & 120\,M & \raggedleft 120\,M, bonded & none --- bonded at genesis via gentx & the ten launch validators' operating entities (\dref{D7}) \\
 Liquidity \& public distribution & 8\,\% & 80\,M & \raggedleft 80\,M & none & foundation, earmarked for DEX liquidity, market making and any public sale \\
 \midrule
- & 100\,\% & 1\,000\,M & \raggedleft 280\,M (28\,\%) & & \\
+ & 100\,\% & 1\,000\,M & \raggedleft 322\,M (32.2\,\%) & & \\
 \bottomrule
 \end{tabularx}
 \caption{Genesis allocation.}
@@ -280,25 +281,34 @@ Liquidity \& public distribution & 8\,\% & 80\,M & \raggedleft 80\,M & none & fo
 \begin{table}[tbp]
 \centering
 \small
-\begin{tabularx}{\textwidth}{@{}lrLL@{}}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.4cm}rrlLL@{}}
 \toprule
-Sub-bucket & Share & Purpose & Steward \\
+Sub-bucket & Share & \kash{} & At genesis & Purpose & Steward and release \\
 \midrule
-Ecosystem \& developer grants & 18\,\% & builders, integrations, tooling, bug bounties & foundation grants committee; large grants ratified by governance \\
-User \& developer incentives & 10\,\% & usage rewards, airdrops, liquidity mining, hackathon prizes & foundation, programme by programme \\
-On-chain community pool seed & 5\,\% & governance-spendable from day one, on top of the 2\,\% tax & the \code{x/distribution} community pool; governance proposals only \\
+Ecosystem \& developer grants & 18\,\% & 180\,M & locked & builders, integrations, tooling, bug bounties & foundation grants committee; large grants ratified by governance. Non-revocable vesting wallets, beneficiary the foundation multisig, five yearly tranches of 30 / 25 / 20 / 15 / 10\,\% (54 / 45 / 36 / 27 / 18\,M) \\
+User \& developer incentives & 10\,\% & 100\,M & locked & usage rewards, airdrops, liquidity mining, hackathon prizes & foundation, programme by programme. Same wallet shape; tranches 30 / 25 / 20 / 15 / 10\,\% (30 / 25 / 20 / 15 / 10\,M) \\
+On-chain community pool seed & 5\,\% & 50\,M & \textbf{liquid} & governance-spendable from day one, on top of the 2\,\% tax & the \code{x/distribution} community pool; governance proposals only. Written directly into genesis distribution state, never through a contract \\
 \bottomrule
 \end{tabularx}
 \caption{The community \& developers bucket (33\,\%), split.}
 \label{tab:community}
 \end{table}
 
+The community pool is a Cosmos \emph{module account}: no key holds it, only a
+passed governance proposal moves anything out of it, and the chain refuses EVM
+value transfers into it. It is therefore the one part of the community bucket
+that cannot sit behind a vesting contract; it is seeded in genesis and grows
+by the 2\,\% tax. Grants and incentives, which the foundation spends
+programmatically, are the parts that vest.
+
 Why these numbers:
 
 \begin{itemize}
-\item \textbf{Team 22\,\%, fully locked, one-year cliff.} This is the middle of
-  the Layer-1 range and reads as committed rather than extractive. Nothing in
-  the team bucket is sellable in year one.
+\item \textbf{Team 22\,\%} is the middle of the Layer-1 range and reads as
+  committed rather than extractive. \textbf{10\,\% of each grant is liquid at
+  launch} so members have something in hand; the other 90\,\% is behind a
+  one-year cliff and vests over the following three years, so 90\,\% of the
+  team's allocation is still unsellable in year one.
 \item \textbf{Community 33\,\% is the largest bucket.} Grants and incentives are
   the actual growth lever for a new EVM chain.
 \item \textbf{Treasury 25\,\%} covers audits (\dref{D9}), infrastructure, legal,
@@ -308,9 +318,11 @@ Why these numbers:
   day one gives $\approx$11.5\,\% staking APR from equation~\ref{eq:apr} --- high
   enough to pull outside delegation in as the set opens (\S\ref{sec:validators}),
   and falling naturally as it arrives.
-\item \textbf{28\,\% liquid at genesis} (bonded validator stake plus the treasury
-  tranche plus liquidity) is enough float for a functioning market without a
-  supply overhang.
+\item \textbf{32.2\,\% liquid at genesis} (bonded validator stake 120\,M,
+  treasury tranche 50\,M, liquidity 80\,M, community-pool seed 50\,M, team
+  22\,M) is enough float for a functioning market without a supply overhang;
+  the bonded 120\,M is not sellable without a 21-day unbond, and the pool's
+  50\,M only moves by governance.
 \end{itemize}
 
 \begin{table}[H]
@@ -320,16 +332,18 @@ Why these numbers:
 \toprule
 End of year & Team & Community & Treasury & Validators & Liquidity & \textbf{Circulating} \\
 \midrule
-genesis & 0 & 30\,M & 50\,M & 120\,M & 80\,M & \textbf{280\,M (28\,\%)} \\
-1 & 0 & 120\,M & 100\,M & 120\,M & 80\,M & \textbf{420\,M (42\,\%)} \\
-2 & 73\,M & 195\,M & 150\,M & 120\,M & 80\,M & \textbf{618\,M (62\,\%)} \\
-3 & 147\,M & 255\,M & 200\,M & 120\,M & 80\,M & \textbf{802\,M (80\,\%)} \\
-4 & 220\,M & 300\,M & 250\,M & 120\,M & 80\,M & \textbf{970\,M (97\,\%)} \\
+genesis & 22\,M & 50\,M & 50\,M & 120\,M & 80\,M & \textbf{322\,M (32.2\,\%)} \\
+1 & 22\,M & 134\,M & 100\,M & 120\,M & 80\,M & \textbf{456\,M (45.6\,\%)} \\
+2 & 88\,M & 204\,M & 150\,M & 120\,M & 80\,M & \textbf{642\,M (64.2\,\%)} \\
+3 & 154\,M & 260\,M & 200\,M & 120\,M & 80\,M & \textbf{814\,M (81.4\,\%)} \\
+4 & 220\,M & 302\,M & 250\,M & 120\,M & 80\,M & \textbf{972\,M (97.2\,\%)} \\
 5 & 220\,M & 330\,M & 250\,M & 120\,M & 80\,M & \textbf{1\,000\,M (100\,\%)} \\
 \bottomrule
 \end{tabular}
-\caption{Circulating supply by year, issuance excluded; community releases
-front-loaded 30 / 25 / 20 / 15 / 10\,\% (TOKENOMICS \S7).}
+\caption{Circulating supply by year, issuance excluded. Community: 50\,M pool
+seed at genesis plus 280\,M released 30 / 25 / 20 / 15 / 10\,\% per year.
+Team: 22\,M at genesis plus 198\,M vesting linearly from month 12 to month 48
+(TOKENOMICS \S7).}
 \end{table}
 
 Names and individual amounts within the team bucket are not part of this
@@ -347,21 +361,37 @@ protocol-level balance model that every balance-touching path must get right.
 Contracts are auditable in isolation, and a contest-style Solidity audit is a
 good fit for them (\S\ref{sec:audit}).
 
-\begin{itemize}
-\item \textbf{Team grants are revocable.} The foundation multisig may revoke a
-  departing team member's grant; unvested tokens return to the treasury, vested
-  tokens remain the beneficiary's.
-\item \textbf{Treasury and community schedules are not revocable.}
-\item Each team grant is one contract per beneficiary with the cliff-plus-linear
-  schedule in Table~\ref{tab:allocation}.
-\end{itemize}
+The contracts are built on the OpenZeppelin v5 vesting-wallet base, hold native
+\kash{} only, and are deployed at \code{CREATE2}-deterministic addresses known
+before genesis, so the genesis file funds each wallet directly. A vesting year
+is 365 days. Three shapes are used:
 
-The vesting contracts are specified but not yet built at the time of this draft
+\begin{description}[style=nextline]
+\item[Team grants (revocable).] 10\,\% of each grant is a plain genesis balance
+  and never touches a contract. The remaining 90\,\% sits in a per-person
+  wallet that releases nothing until the 12-month cliff, then linearly over the
+  following 36 months. The foundation multisig may \textbf{revoke} a departing
+  member's wallet: what has vested stays with the member, what has not returns
+  to the treasury. A member who leaves in month eight walks away with only
+  the liquid 10\,\%.
+\item[Community grants and incentives (non-revocable).] 280\,M in tranche
+  wallets whose beneficiary is the foundation multisig, releasing one tranche
+  per year, front-loaded: 30 / 25 / 20 / 15 / 10\,\% (Table~\ref{tab:community}).
+  Nobody can revoke or accelerate them.
+\item[Treasury (non-revocable).] 50\,M liquid at genesis; 200\,M in a wallet
+  vesting linearly over 48 months to the foundation multisig.
+\end{description}
+
+The community-pool seed (50\,M) is not a contract at all: it is a module
+account written into the genesis distribution state and spendable only by
+governance. Calling \code{release()} on any wallet moves whatever has vested so
+far to its beneficiary; nobody else can move it.
+
+The vesting contracts are built and pending review at the time of this draft
 (\code{contracts/src/vesting/}); their audit is part of the pre-mainnet scope.
-\todo{Confirm the vesting contract design once built: whether the community
-bucket's front-loaded release is a contract schedule or a foundation-executed
-programme, and who holds the revocation key for team grants (the foundation
-multisig is decided; its signer set is not).}
+\todo{Confirm the final vesting contract parameters once reviewed and merged,
+and the signer set of the foundation multisig that holds the team-grant
+revocation role (the multisig is decided; its signers are not).}
 
 \subsection{Flow of value, end to end}
 

@@ -18,13 +18,18 @@ Not released: no PDF in `releases/`. Every number is taken from
 - Architecture: imported-vs-implemented posture, the never-fork policy and the
   August 2026 incident behind it, BlockSTM off at launch with the shadow-node
   enablement plan.
-- Tokenomics: 1 B KASH genesis supply and allocation; D4 issuance
+- Tokenomics: 1 B KASH genesis supply and allocation (322 M / 32.2 % liquid
+  at genesis: team 10 % liquid, community-pool seed 50 M in genesis
+  distribution state, 280 M in tranche wallets); D4 issuance
   `annual KASH = F × √(bonded KASH)`, F = 1265, with the APR table; D5
   base-fee burn and the net-supply dynamic; D10 staking and D11 governance
-  parameters; D12 Solidity vesting (team grants revocable).
-- Validator set: 5–10 self-run validators, stated as permissioned at launch
-  (D7); a staged roadmap for opening the set with dates and triggers left as
-  placeholders.
+  parameters; D12 Solidity vesting (team 10 % liquid + 90 % cliff-and-linear,
+  revocable; community tranches non-revocable).
+- Validator set: ten independent operators at genesis, `max_validators` 30,
+  admission permissioned via `MsgCreateValidator` disabled in circuit-breaker
+  genesis state (D7 as re-decided 2026-09-20, D16), identical on testnet-1
+  and mainnet; a staged roadmap for opening the set with dates and triggers
+  left as placeholders.
 - Bridges and value ceiling: no bridge on day one (D8) and the four-step
   opening sequence; the safety rails — circuit breaker (D14), IBC rate limiting
   (D15), bridge caps, halt drill.
@@ -37,7 +42,7 @@ Not released: no PDF in `releases/`. Every number is taken from
 - Security: audit-the-delta plan with Informal Systems (D9), bug bounty
   before mainnet, continuous assurance, the launch sequence (§15).
 - Disclaimers (standard form, marked for legal review).
-- Appendix: decision record D1–D15 with dates; glossary.
+- Appendix: decision record D1–D16 with dates; glossary.
 - Auto-generated list of every `\todo{}` placeholder at the end of the PDF.
 
 Repo scaffolding in the same change: `Makefile` (latexmk or tectonic),

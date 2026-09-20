@@ -73,7 +73,9 @@ Two properties are worth stating for the reader assessing trust:
 \end{itemize}
 
 In operational terms: disabling \code{MsgTransfer} stops all IBC sends, Cosmos
-and EVM; disabling \code{MsgEthereumTx} pauses the whole EVM.
+and EVM; disabling \code{MsgEthereumTx} pauses the whole EVM. The breaker is
+also the mechanism of validator admission: \code{MsgCreateValidator} ships
+disabled in genesis state (\dref{D16}, \S\ref{sec:admission}).
 
 The Cosmos SDK deprecated this package in v0.54 and no longer maintains it.
 Konstellation uses it anyway --- it is about 1\,300 stable lines and the

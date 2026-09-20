@@ -18,15 +18,16 @@ EIP-155 chain ID, and Blockscout indexes the result. To a Cosmos operator it is
 a standard SDK application: \code{konstellationd} is a single Go binary, upgrades
 are coordinated by governance and Cosmovisor, and the chain speaks IBC.
 
-The chain is designed to hold real user funds from its first block, secured by a
-validator set of five to ten nodes across several cloud providers and
-jurisdictions. That combination --- real value, a small set --- drives every
+The chain is designed to hold real user funds from its first block, secured by
+ten validators run by independent operators across several cloud providers and
+jurisdictions, with admission to the set permissioned at launch. That
+combination --- real value, a small set --- drives every
 conservative choice in this document: the never-fork policy
 (\S\ref{sec:neverfork}), parallel execution switched off at launch
 (\S\ref{sec:blockstm}), no bridge on day one (\S\ref{sec:bridges}), mandatory
 safety rails before any user money moves (\S\ref{sec:rails}), and a validator
-set that is honestly described as permissioned at launch
-(\S\ref{sec:validators}).
+set whose admission is honestly described as permissioned at launch, with a
+published path to opening it (\S\ref{sec:validators}).
 
 \subsection{Naming and identifiers}
 
