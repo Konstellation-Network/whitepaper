@@ -11,10 +11,9 @@ launch is bounded by what is allocated at genesis --- a \textbf{value ceiling}
 that limits the blast radius of any defect while the chain soaks under real
 conditions (launch-sequence phase~9, \S\ref{sec:launch}).
 
-Bridges are where Cosmos EVM chains have lost the most money. A bridge contract
-is the highest-priority audit item on this chain's list precisely because,
-once one exists, it is the largest pool of value reachable from a single bug
-(ENGINEERING \S12). Shipping it later, audited, capped and after a soak is a
+A bridge contract is the highest-priority audit item on this chain's list
+because, once one exists, it is the largest pool of value reachable from a
+single bug (ENGINEERING \S12). Shipping it later, audited, capped and after a soak is a
 deliberate trade of early liquidity for a smaller worst case.
 
 \subsection{The sequence for opening one}
@@ -44,7 +43,9 @@ the order in which it will.}
 \label{sec:rails}
 
 Four controls ship before any user money moves (ENGINEERING \S13). They are
-independent of bridge timing and are in place at genesis.
+independent of bridge timing: the first two are in place at genesis, the
+third applies once a bridge exists, and the fourth is a rehearsal completed
+on \code{testnet-1} before mainnet.
 
 \subsubsection{Circuit breaker}
 \label{sec:circuit}
@@ -79,8 +80,8 @@ disabled in genesis state (\dref{D16}, \S\ref{sec:admission}).
 
 The Cosmos SDK deprecated this package in v0.54 and no longer maintains it.
 Konstellation uses it anyway --- it is about 1\,300 stable lines and the
-application hook it needs is first-class --- and the build fails with a
-re-check checklist on every SDK bump; if a later SDK drops the package it will
+application hook it needs is first-class --- and a pinned-version test fails
+with a re-check checklist on every SDK bump; if a later SDK drops the package it will
 be vendored into the chain and enter the audit scope (ENGINEERING \S7.1).
 
 \subsubsection{IBC rate limiting}

@@ -19,7 +19,7 @@ Base denomination & \esp{}, 18 decimals (1\,\kash{} $= 10^{18}$\,\esp) \\
 Gas token & \kash{} --- the same asset; there is no second token \\
 Genesis supply & \textbf{1\,000\,000\,000 \kash{}} \\
 Maximum supply & uncapped (\code{x/mint} \code{max\_supply = 0}); see \S\ref{sec:netsupply} \\
-Uses & gas, staking and delegation, governance deposits and voting \\
+Uses & \legal{gas, staking and delegation, governance deposits and voting} \\
 \bottomrule
 \end{tabular}
 \caption{The token (TOKENOMICS \S1).}
@@ -191,7 +191,7 @@ a function of the security budget.
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{@{}ll@{}}
+\begin{tabularx}{\textwidth}{@{}lL@{}}
 \toprule
 Consensus & delegated proof of stake (\code{x/staking}) \\
 Active set (\code{max\_validators}) & \textbf{30} \\
@@ -203,7 +203,7 @@ Downtime definition & missing more than 50\,\% of a 100-block window (SDK defaul
 Downtime jail & 10 minutes, then an unjail transaction (SDK default) \\
 Launch validator set & 10 foundation-run validators at genesis, further admission permissioned (\dref{D7}, \dref{D16}, \S\ref{sec:validators}); same on \code{testnet-1} and mainnet \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \caption{Staking and slashing parameters (\dref{D10}, TOKENOMICS \S4). Slashed
 stake is burned.}
 \end{table}
@@ -269,7 +269,7 @@ Founding team \& early contributors & 22\,\% & 220\,M & \raggedleft 22\,M (10\,\
 Community \& developers & 33\,\% & 330\,M & \raggedleft 50\,M (the community-pool seed) & remaining 280\,M released over 5 years, front-loaded & see Table~\ref{tab:community} \\
 Treasury (foundation) & 25\,\% & 250\,M & \raggedleft 50\,M & 20\,\% liquid at genesis; remainder linear over 48 months & foundation multisig ($\geq$3-of-5); vesting wallet for the locked part \\
 Validator bootstrap \& staking & 12\,\% & 120\,M & \raggedleft 120\,M, bonded & none --- bonded at genesis via gentx & the foundation, as operator of the ten launch validators (\dref{D7}) \\
-Liquidity \& public distribution & 8\,\% & 80\,M & \raggedleft 80\,M & none & foundation, earmarked for DEX liquidity, market making and any public sale \\
+Liquidity \& public distribution & 8\,\% & 80\,M & \raggedleft 80\,M & none & foundation, earmarked for DEX liquidity, market making and \legal{any public sale} \\
 \midrule
  & 100\,\% & 1\,000\,M & \raggedleft 322\,M (32.2\,\%) & & \\
 \bottomrule
@@ -304,25 +304,25 @@ programmatically, are the parts that vest.
 Why these numbers:
 
 \begin{itemize}
-\item \textbf{Team 22\,\%} is the middle of the Layer-1 range and reads as
+\item \legal{\textbf{Team 22\,\%} is the middle of the Layer-1 range and reads as
   committed rather than extractive. \textbf{10\,\% of each grant is liquid at
   launch} so members have something in hand; the other 90\,\% is behind a
   one-year cliff and vests over the following three years, so 90\,\% of the
-  team's allocation is still unsellable in year one.
+  team's allocation is still unsellable in year one.}
 \item \textbf{Community 33\,\% is the largest bucket.} Grants and incentives are
   the actual growth lever for a new EVM chain.
 \item \textbf{Treasury 25\,\%} covers audits (\dref{D9}), infrastructure, legal,
-  listings and multi-year runway; 20\,\% is liquid because those costs start
-  before launch.
-\item \textbf{Validators 12\,\%, bonded at genesis.} $\approx$120\,M bonded on
+  \legal{listings} and multi-year runway; 20\,\% is liquid because those costs
+  start before launch.
+\item \legal{\textbf{Validators 12\,\%, bonded at genesis.} $\approx$120\,M bonded on
   day one gives $\approx$11.5\,\% staking APR from equation~\ref{eq:apr} --- high
   enough to pull outside delegation in as the set opens (\S\ref{sec:validators}),
-  and falling naturally as it arrives.
-\item \textbf{32.2\,\% liquid at genesis} (bonded validator stake 120\,M,
+  and falling naturally as it arrives.}
+\item \legal{\textbf{32.2\,\% liquid at genesis} (bonded validator stake 120\,M,
   treasury tranche 50\,M, liquidity 80\,M, community-pool seed 50\,M, team
   22\,M) is enough float for a functioning market without a supply overhang;
   the bonded 120\,M is not sellable without a 21-day unbond, and the pool's
-  50\,M only moves by governance.
+  50\,M only moves by governance.}
 \end{itemize}
 
 \begin{table}[H]
@@ -375,9 +375,10 @@ is 365 days. Three shapes are used:
   to the treasury. A member who leaves in month eight walks away with only
   the liquid 10\,\%.
 \item[Community grants and incentives (non-revocable).] 280\,M in tranche
-  wallets whose beneficiary is the foundation multisig, releasing one tranche
-  per year, front-loaded: 30 / 25 / 20 / 15 / 10\,\% (Table~\ref{tab:community}).
-  Nobody can revoke or accelerate them.
+  wallets whose beneficiary is the foundation multisig, one tranche per year,
+  front-loaded: 30 / 25 / 20 / 15 / 10\,\% (Table~\ref{tab:community}). Each
+  year's tranche vests linearly within its year rather than unlocking as a
+  step. Nobody can revoke or accelerate them.
 \item[Treasury (non-revocable).] 50\,M liquid at genesis; 200\,M in a wallet
   vesting linearly over 48 months to the foundation multisig.
 \end{description}
@@ -388,7 +389,8 @@ governance. Calling \code{release()} on any wallet moves whatever has vested so
 far to its beneficiary; nobody else can move it.
 
 The vesting contracts are built and pending review at the time of this draft
-(\code{contracts/src/vesting/}); their audit is part of the pre-mainnet scope.
+(in the \code{contracts} repository, \code{src/vesting/}); their audit is part
+of the pre-mainnet scope.
 \todo{Confirm the final vesting contract parameters once reviewed and merged,
 and the signer set of the foundation multisig that holds the team-grant
 revocation role (the multisig is decided; its signers are not).}
@@ -396,7 +398,7 @@ revocation role (the multisig is decided; its signers are not).}
 \subsection{Flow of value, end to end}
 
 \begin{figure}[H]
-\small
+\footnotesize
 \begin{verbatim}
                     +------------- issuance: F x sqrt(bonded) --------------+
                     |                                                       v

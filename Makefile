@@ -25,9 +25,9 @@ ifneq ($(LATEXMK),)
 	cd $(SRC_DIR) && latexmk -pdf -interaction=nonstopmode -halt-on-error \
 	    -outdir=../$(BUILD_DIR) $(MAIN).tex
 else ifneq ($(TECTONIC),)
-	tectonic --keep-intermediates --outdir $(BUILD_DIR) $(SRC_DIR)/$(MAIN).tex
+	tectonic --keep-intermediates --keep-logs --outdir $(BUILD_DIR) $(SRC_DIR)/$(MAIN).tex
 	# tectonic runs the TOC/todo-list passes itself; a second run settles page refs
-	tectonic --keep-intermediates --outdir $(BUILD_DIR) $(SRC_DIR)/$(MAIN).tex
+	tectonic --keep-intermediates --keep-logs --outdir $(BUILD_DIR) $(SRC_DIR)/$(MAIN).tex
 else
 	@echo "no TeX engine found: install latexmk (TeX Live / MacTeX) or tectonic" >&2; exit 1
 endif

@@ -6,7 +6,7 @@
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{@{}lll@{}}
+\begin{tabularx}{\textwidth}{@{}llL@{}}
 \toprule
 Component & Version & Role \\
 \midrule
@@ -17,7 +17,7 @@ Component & Version & Role \\
 go-ethereum & v1.17 (Cosmos fork) & EVM interpreter, pulled in by \code{cosmos/evm} \\
 Go toolchain & 1.26 & build \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \caption{Target stack at the time of this draft (ENGINEERING \S3). Versions
 move with upstream security releases; the policy in \S\ref{sec:neverfork} is
 what stays fixed.}
@@ -95,7 +95,8 @@ controls. Dependencies are pinned to release tags and commit hashes, never to
 branch names, so that an upstream force-push cannot silently change what
 validators execute (ENGINEERING \S2.1--\S2.3).
 
-The reason is operational, and it is drawn from a specific incident. In August
+The reason is operational, and it is drawn from a specific incident.
+\legal{In August
 2026 a critical balance-underflow bug in \code{cosmos/evm}
 (GHSA-7g4w-cg88-2cq2) drained six Cosmos EVM chains of roughly USD~5.72\,M.
 The fix had existed on the upstream \code{main} branch since 15~May; it was not
@@ -108,7 +109,7 @@ thirty-eight validators. Earlier that year a nested-execution bug
 Cosmos Labs later disclosed that it had shipped fixes for thirty-seven
 vulnerabilities over thirteen months without publicly describing the exploit
 paths, and two of the relevant release notes described the security backport
-only as ``important security fixes'' (ENGINEERING \S2.1, \S4).
+only as ``important security fixes'' (ENGINEERING \S2.1, \S4).}
 
 The conclusion is that every fork hop between upstream and a running chain adds
 latency to security patches, and that latency is what the exploits used. The
@@ -138,8 +139,8 @@ coordinated binary swap across ten nodes under one operator takes under an hour.
 \subsection{Execution: sequential at launch}
 \label{sec:blockstm}
 
-\code{cosmos/evm} v0.7 introduced BlockSTM, parallel transaction execution
-under a software-transactional-memory scheduler, bundled with a new
+\code{cosmos/evm} v0.7 introduced BlockSTM: parallel transaction execution
+under a software transactional memory (STM) scheduler, bundled with a new
 ``virtual fee collection'' path. Both are opt-in. Konstellation launches with
 \textbf{both switched off} and uses the sequential runner (ENGINEERING \S2.5,
 \S7.3). The rationale:
@@ -175,5 +176,6 @@ holding user funds), which both provides high availability and makes
 double-signing cryptographically hard. Release binaries are never built on a
 validator: they are produced by continuous integration from a signed tag, built
 twice independently, and published only if both builds agree on the checksum
-(ENGINEERING \S2.6, \S9). Operators are diversified by provider, autonomous
-system and jurisdiction, mixing bare-metal and cloud hosts.
+(ENGINEERING \S2.6, \S9). Validators are spread across two cloud providers,
+autonomous systems and jurisdictions (Hetzner: Germany and Finland; Google
+Cloud: United States).

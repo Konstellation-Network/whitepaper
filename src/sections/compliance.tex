@@ -28,9 +28,11 @@ holding two lists (\dref{D6}, ENGINEERING \S10):
 \end{description}
 
 Both lists are readable from Solidity through a read-only precompile,
-\code{ICompliance}, at the fixed address
-\code{0x0000000000000000000000000000000000000900}, exposing
-\code{isVerified(address)}, \code{isFrozen(address)} and
+\code{ICompliance}, at a fixed address:
+\begin{center}
+\code{0x0000000000000000000000000000000000000900}
+\end{center}
+It exposes \code{isVerified(address)}, \code{isFrozen(address)} and
 \code{status(address)}. Contracts that need to refuse \emph{internal}
 transfers to frozen addresses --- which the ante handler cannot see --- call
 it.
@@ -55,7 +57,7 @@ authorisation (ENGINEERING \S10, \S\ref{sec:aa}).
 \toprule
 Path & Who & Timing \\
 \midrule
-Scheduled change & the compliance authority (a foundation multisig) & takes effect after an on-chain \textbf{timelock of 24 hours} on mainnet; visible on-chain for the whole delay \\
+Scheduled change & the compliance authority (a foundation multisig) & takes effect after an on-chain \textbf{timelock of 24 hours} on mainnet for block-list changes; visible on-chain for the whole delay. Allow-list additions have their own timelock parameter (24 hours by default, settable from zero to ninety days) \\
 Emergency freeze & the compliance authority & takes effect \textbf{immediately}; \textbf{auto-expires after one timelock period} unless ratified by scheduling the permanent add. An address under a live emergency freeze, or within one timelock after it lapsed or was lifted, cannot be emergency-frozen again --- only the scheduled path or governance can hold a freeze past one period \\
 Governance override & any passed governance proposal & can add or remove any entry, cancel any scheduled change, and \textbf{replace the authority} \\
 \bottomrule
@@ -105,7 +107,9 @@ qualification (ENGINEERING \S10, \dref{D6}).
   It is a multisig from genesis; non-emergency actions are timelocked; every
   action is logged on-chain; governance can replace it. Those mitigations
   reduce the risk; they do not remove it. A compromise of the authority could
-  freeze any address for one timelock period before governance could act.
+  freeze any address immediately and, by scheduling the permanent entry, hold
+  it frozen until a governance proposal (one day expedited, three days
+  otherwise) removes it or replaces the authority.
 \item \legal{\textbf{The ability to freeze can create a legal obligation to
   freeze}, across multiple jurisdictions. Operating the authority is an
   ongoing, staffed function with liability attached, not a one-time deployment.

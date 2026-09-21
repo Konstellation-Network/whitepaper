@@ -4,8 +4,8 @@
 \subsection{The launch set, stated plainly}
 
 At genesis Konstellation will be validated by \textbf{ten validators, all run
-by the foundation}, spread across multiple cloud and bare-metal providers,
-autonomous systems and jurisdictions. \textbf{The launch set is centralised},
+by the foundation}, spread across two cloud providers, autonomous systems and
+jurisdictions (Hetzner: Germany and Finland; Google Cloud: United States). \textbf{The launch set is centralised},
 and \textbf{admission to the set is permissioned}: who may become a validator
 is controlled by the mechanism in \S\ref{sec:admission}. This document says
 both plainly rather than describing the chain as decentralised or
@@ -19,9 +19,9 @@ mainnet will use (ENGINEERING \S9.4, \S18).
 The reasons are the ones behind every other conservative choice here. The chain
 holds real user funds from block one. Ten validators under one operator with a
 paging rota, a runbook and an incident channel can execute a security-patch
-binary swap in under an hour (\S\ref{sec:neverfork}); a set of forty
-independent operators, on the evidence of the 2026 incidents, cannot do it in
-twenty. The launch set is small and single-operator because the response
+binary swap in under an hour (\S\ref{sec:neverfork}); a set of thirty-eight
+independent validators, on the evidence of the 2026 incidents, could not do it
+in twenty. The launch set is small and single-operator because the response
 window has to be short, and the roadmap in \S\ref{sec:roadmap} is the
 commitment that it does not stay that way.
 
@@ -38,20 +38,23 @@ transactions.
 \label{sec:admission}
 
 ``Permissioned'' is a mechanism, not a policy statement (\dref{D16}, decided
-2026-09-20). The genesis state of both networks lists the
-\code{MsgCreateValidator} message type in the circuit breaker's disabled set
-(\S\ref{sec:circuit}), so no transaction creating a validator is accepted. The
-ten launch validators exist through genesis transactions, which are applied at
-block zero and never pass through the message router.
+2026-09-20). Both networks will ship with the \code{MsgCreateValidator}
+message type in the circuit breaker's disabled set (\S\ref{sec:circuit};
+genesis state, not yet generated), so no transaction creating a validator is
+accepted. The ten launch validators exist through genesis transactions, which
+are applied at block zero and never pass through the message router.
 
 \begin{description}[style=nextline]
 \item[Admitting an operator.] The 3-of-5 operations multisig resets the
   breaker for that message type, the operator submits
   \code{MsgCreateValidator}, and the multisig disables it again --- in the same
   block if the three transactions are bundled, otherwise within a window of
-  seconds. A validator created opportunistically in that window without
-  foundation-scale stake never enters the 30-seat active set, so the window is
-  not an exposure.
+  seconds. A validator created opportunistically in that window would enter
+  the active set (twenty of the thirty seats are empty at genesis, and one
+  \kash{} of self-delegation qualifies) but would hold negligible voting power
+  against the 120\,M \kash{} bonded at genesis, so the window is not a
+  consensus exposure; it would sit in the set until it unbonds or is jailed
+  for downtime.
 \item[Going permissionless.] A governance proposal removes the message type
   from the disabled list permanently. Because the circuit breaker can never
   disable governance's own messages (\S\ref{sec:circuit}), the path to opening
@@ -75,9 +78,13 @@ held to the same ones every admitted operator will be:
   permanent tombstone for double-signing, 0.01\,\% and jail for downtime
   (\dref{D10}).
 \item \textbf{Key isolation.} Every consensus key is held in a threshold
-  signer (Horcrux, with dedicated cosigners across three or more regions) or
-  an HSM-backed signer, never on a machine that also serves public traffic;
-  an admitted operator holds its own keys under the same rule. Running two nodes with
+  signer (Horcrux) or an HSM-backed signer, never on a machine that also
+  serves public traffic; an admitted operator holds its own keys under the
+  same rule. On mainnet, Horcrux runs with dedicated cosigners across three
+  or more hosts, regions and clouds, mandatory before genesis; on
+  \code{testnet-1} the cosigners are colocated with the node, since the
+  double-signing risk there is theoretical rather than financial
+  (ENGINEERING \S18). Running two nodes with
   the same consensus key is forbidden under all circumstances, including
   migrations and failover (ENGINEERING \S2.7, \S9.2).
 \item \textbf{Reproducible binaries.} No validator runs a binary it built
@@ -139,14 +146,15 @@ document, not guessed here.
 \item[Stage 5 --- raising the cap and lengthening governance.]
   \code{max\_validators} (30) and the 3-day voting period are both governance
   parameters. The intent recorded with \dref{D11} is to lengthen the voting
-  period as the set decentralises; the intent recorded with \dref{D10} is that
-  30 is a launch cap, not a permanent one. \todo{Decide target set sizes and
+  period as the set decentralises; the cap of 30 (\dref{D10}) may be raised as
+  a Stage~5 decision under the \dref{D7} roadmap --- nothing about that is
+  decided. \todo{Decide target set sizes and
   voting periods for Stage 5, and whether they are tied to a share of stake
   held outside the foundation.}
 \end{description}
 
-Two properties of the economics are designed to make opening the set work
-without further intervention. First, the issuance curve
+\legal{Two properties of the economics are designed to make opening the set
+work without further intervention.} First, the issuance curve
 (\S\ref{sec:issuance}) pays $\approx$11.5\,\% at the genesis bonding level and
 falls as stake arrives, so outside delegation is pulled in when the set is
 smallest and the pull fades as it grows. Second, the yield is chain-wide and

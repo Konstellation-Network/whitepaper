@@ -33,7 +33,7 @@ marker may be resolved by guessing.
 The whitepaper *describes* decisions; it does not make them.
 
 - Every economic number comes from the org-root `TOKENOMICS.md`.
-- Every design statement cites a decision in `ENGINEERING.md §11` (D1–D15).
+- Every design statement cites a decision in `ENGINEERING.md §11` (D1–D17).
 - When either file changes a number the whitepaper carries, this repo gets a
   new version; the old PDF stays in `releases/`.
 

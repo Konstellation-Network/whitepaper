@@ -19,8 +19,8 @@ a standard SDK application: \code{konstellationd} is a single Go binary, upgrade
 are coordinated by governance and Cosmovisor, and the chain speaks IBC.
 
 The chain is designed to hold real user funds from its first block, secured by
-ten foundation-run validators across several cloud providers and
-jurisdictions, with admission of further validators permissioned at launch. That
+ten foundation-run validators across two cloud providers, autonomous systems
+and jurisdictions, with admission of further validators permissioned at launch. That
 combination --- real value, a small set --- drives every
 conservative choice in this document: the never-fork policy
 (\S\ref{sec:neverfork}), parallel execution switched off at launch
@@ -75,10 +75,10 @@ the \code{werc20} precompile shipped by \code{cosmos/evm} (ENGINEERING \S6.3).
 \subsection{Networks}
 
 One binary and one codebase serve both networks. \code{konstellationd} does not
-know which network it is on beyond the chain-id checks; every difference between
-\code{testnet-1} and \code{konstellation-1} lives in the network's
-\code{genesis.json} or in the deployment environment, and every such difference
-is enumerated in the engineering record (ENGINEERING \S18). Where this document
+know which network it is on beyond the chain-id checks. Every difference
+between the testnet and the mainnet lives in that network's genesis file or in
+the deployment environment, and every such difference is enumerated in the
+engineering record (ENGINEERING \S18). Where this document
 gives a parameter that differs on testnet, it says so.
 
 \subsection{How to read this document}

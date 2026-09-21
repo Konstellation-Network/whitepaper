@@ -61,15 +61,22 @@ signature in Solidity is prohibitively expensive without native support.
 \code{cosmos/evm} ships the RIP-7212 / EIP-7212 \code{p256} precompile at
 \code{0x0000000000000000000000000000000000000100}; Konstellation exposes it
 unchanged, so passkey-based smart accounts work at the cost of a precompile
-call.
+call. This address is one reason the Osaka fork is not enabled
+(\dref{D17}): Osaka's native EIP-7951 P-256 precompile lands at the same
+address, and which one wins is undefined upstream.
 
 \subsection{EIP-7702}
 
 EIP-7702 lets an externally owned account delegate its code to a contract by
 signing an authorisation, so an existing key can behave as a smart account
 without migrating funds. It requires the Prague fork rules in the EVM
-configuration; the pinned \code{cosmos/evm} release activates Prague from
-genesis in its default chain configuration, and the chain's integration tests
+configuration. Konstellation runs the \textbf{Prague} (Pectra) fork from
+genesis, which is what the pinned \code{cosmos/evm} release activates by
+default; the later Osaka (Fusaka) fork is deliberately not enabled, because
+upstream never activates it and its own code only branches on Prague, so it is
+an untested path, and because of the precompile-address collision above
+(\dref{D17}, decided 2026-09-21). Contracts are compiled for the
+\code{prague} EVM version. The chain's integration tests
 exercise 7702 delegations end to end, including the interaction with the
 compliance module (\S\ref{sec:compliance}):
 

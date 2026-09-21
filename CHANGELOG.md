@@ -11,7 +11,7 @@ with a new version.
 First complete draft. Source in `src/whitepaper.tex` + `src/sections/*.tex`.
 Not released: no PDF in `releases/`. Every number is taken from
 `TOKENOMICS.md`; every design statement cites a decision in
-`ENGINEERING.md §11` (D1–D15). Contents:
+`ENGINEERING.md §11` (D1–D17). Contents:
 
 - Overview: sovereign L1, Cosmos SDK + `cosmos/evm`; naming table
   (KASH, `esp`, 18 decimals, `kons`, chain IDs 5667 / 56671).
@@ -38,11 +38,12 @@ Not released: no PDF in `releases/`. Every number is taken from
   and legal-obligation risks stated in full; marked for legal review.
 - Account abstraction: ERC-4337 EntryPoints v0.7 / v0.8 and SenderCreators
   preinstalled at canonical addresses, p256 precompile, EIP-7702 handling
-  including the compliance interaction.
+  including the compliance interaction; Prague fork at genesis, Osaka not
+  enabled (D17).
 - Security: audit-the-delta plan with Informal Systems (D9), bug bounty
   before mainnet, continuous assurance, the launch sequence (§15).
 - Disclaimers (standard form, marked for legal review).
-- Appendix: decision record D1–D16 with dates; glossary.
+- Appendix: decision record D1–D17 with dates; glossary.
 - Auto-generated list of every `\todo{}` placeholder at the end of the PDF.
 
 Repo scaffolding in the same change: `Makefile` (latexmk or tectonic),

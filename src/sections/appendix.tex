@@ -31,6 +31,7 @@ Decision & Date & Summary \\
 \dref{D14} & 2026-09-19 & Circuit breaker: SDK \code{contrib/x/circuit}; governance authority, 3-of-5 operations multisig super-admin via genesis \\
 \dref{D15} & 2026-09-19 & Own \code{x/ratelimit} for IBC value flow; governance-set per-channel quotas \\
 \dref{D16} & 2026-09-20 & Validator admission: \code{MsgCreateValidator} disabled in circuit-breaker genesis state; the operations multisig resets and re-disables around each admission; governance removes it permanently to go permissionless \\
+\dref{D17} & 2026-09-21 & EVM fork level: Prague (Pectra) at genesis, as \code{cosmos/evm} v0.7.3 activates by default; Osaka (Fusaka) not enabled --- untested upstream, and its EIP-7951 P-256 precompile collides with the \code{p256} precompile at \code{0x\ldots0100}; contracts compile for \code{prague} \\
 \bottomrule
 \end{tabularx}
 \caption{Decisions cited in this document.}
