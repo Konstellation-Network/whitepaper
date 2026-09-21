@@ -4,8 +4,8 @@
 \subsection{The launch set, stated plainly}
 
 At genesis Konstellation will be validated by \textbf{ten validators, all run
-by the foundation}, spread across two cloud providers, autonomous systems and
-jurisdictions (Hetzner: Germany and Finland; Google Cloud: United States). \textbf{The launch set is centralised},
+by the foundation}, spread across more than one cloud provider, autonomous
+system and jurisdiction. \textbf{The launch set is centralised},
 and \textbf{admission to the set is permissioned}: who may become a validator
 is controlled by the mechanism in \S\ref{sec:admission}. This document says
 both plainly rather than describing the chain as decentralised or
@@ -21,9 +21,20 @@ holds real user funds from block one. Ten validators under one operator with a
 paging rota, a runbook and an incident channel can execute a security-patch
 binary swap in under an hour (\S\ref{sec:neverfork}); a set of thirty-eight
 independent validators, on the evidence of the 2026 incidents, could not do it
-in twenty. The launch set is small and single-operator because the response
-window has to be short, and the roadmap in \S\ref{sec:roadmap} is the
-commitment that it does not stay that way.
+in twenty. Stated plainly, that swap is the foundation halting the chain and
+replacing the binary on its own authority, recorded on-chain afterwards; it
+does not wait for a vote (\S\ref{sec:upgrades}). The launch set is small and
+single-operator because the response window has to be short, and the roadmap
+in \S\ref{sec:roadmap} is the stated intent that it does not stay that way.
+
+A consequence that this document states once here and that applies to every
+later mention of governance: at genesis effectively all bonded stake, and
+therefore all governance voting power, is the foundation's. Every ``governance
+can override'' in this document is, until stake from outside the foundation
+is bonded, a control the foundation exercises over itself --- public,
+on-chain and time-delayed, but not independent. The share of bonded stake
+held outside the foundation (\S\ref{sec:metrics}) is the metric that changes
+this.
 
 What the launch set is \emph{not}: it is not a proof-of-authority chain. The
 staking module is the standard Cosmos SDK delegated-proof-of-stake module with
@@ -53,8 +64,8 @@ are applied at block zero and never pass through the message router.
   the active set (twenty of the thirty seats are empty at genesis, and one
   \kash{} of self-delegation qualifies) but would hold negligible voting power
   against the 120\,M \kash{} bonded at genesis, so the window is not a
-  consensus exposure; it would sit in the set until it unbonds or is jailed
-  for downtime.
+  consensus exposure while stake outside the foundation is small; it would sit
+  in the set until it unbonds or is jailed for downtime.
 \item[Going permissionless.] A governance proposal removes the message type
   from the disabled list permanently. Because the circuit breaker can never
   disable governance's own messages (\S\ref{sec:circuit}), the path to opening
@@ -80,8 +91,8 @@ held to the same ones every admitted operator will be:
 \item \textbf{Key isolation.} Every consensus key is held in a threshold
   signer (Horcrux) or an HSM-backed signer, never on a machine that also
   serves public traffic; an admitted operator holds its own keys under the
-  same rule. On mainnet, Horcrux runs with dedicated cosigners across three
-  or more hosts, regions and clouds, mandatory before genesis; on
+  same rule. On mainnet, Horcrux runs with dedicated cosigners on separate
+  hosts across both clouds, mandatory before genesis; on
   \code{testnet-1} the cosigners are colocated with the node, since the
   double-signing risk there is theoretical rather than financial
   (ENGINEERING \S18). Running two nodes with
@@ -90,9 +101,17 @@ held to the same ones every admitted operator will be:
 \item \textbf{Reproducible binaries.} No validator runs a binary it built
   itself; every release is built in CI from a signed tag, twice, and published
   with checksums that operators verify before staging (ENGINEERING \S2.6).
-\item \textbf{Provider and jurisdiction diversity} across the set even under
-  one operator, so that a single provider outage or a single jurisdiction's
-  action cannot halt the chain on its own (ENGINEERING \S9.2).
+\item \textbf{Provider and jurisdiction diversity, and what it does and does
+  not buy.} The ten validators are split evenly across two cloud providers
+  with equal stake. That split prevents any one provider or jurisdiction from
+  forging blocks or censoring transactions on its own. It does \emph{not}
+  prevent halts: losing either provider, or either jurisdiction, removes half
+  of the voting power, and CometBFT stops producing blocks below two-thirds.
+  Block production would halt until the validators are restored or the set
+  is re-weighted. The halt-and-restart drill (\S\ref{sec:rails}) is rehearsed
+  for exactly this case. Liveness across the loss of a whole provider would
+  require a third provider or unequal weighting; neither is decided (STATUS
+  \S5a, P16).
 \item \textbf{Every emergency power is on-chain and logged.} Validator
   admission, the circuit breaker, the compliance lists and the IBC rate limits
   all act through on-chain messages that emit events; governance can override
@@ -104,11 +123,12 @@ held to the same ones every admitted operator will be:
 \label{sec:roadmap}
 
 The direction is decided: admission opens in stages by governance, and this
-roadmap is the published form of that commitment (\dref{D7}). The
+roadmap is the published form of that stated intent (\dref{D7}). The
 \emph{stages} below follow from the launch sequence (\S\ref{sec:launch}) and
 decisions already on record. The \emph{dates and numeric triggers} are not yet
-decided and are marked as such; they will be filled in a later release of this
-document, not guessed here.
+decided and are marked as such; no date or trigger is committed in this
+version, and they will be filled in a later release of this document, not
+guessed here.
 
 \begin{description}[style=nextline]
 \item[Stage 0 --- testnet with the foundation's validators (launch-sequence phase 5).]
@@ -153,15 +173,17 @@ document, not guessed here.
   held outside the foundation.}
 \end{description}
 
-\legal{Two properties of the economics are designed to make opening the set
-work without further intervention.} First, the issuance curve
-(\S\ref{sec:issuance}) pays $\approx$11.5\,\% at the genesis bonding level and
-falls as stake arrives, so outside delegation is pulled in when the set is
-smallest and the pull fades as it grows. Second, the yield is chain-wide and
-pro-rata, so adding validators changes who earns it, not how much is earned;
-there is no economic reason to keep the set small.
+\legal{Two properties of the issuance design are relevant to opening the set.
+First, the issuance curve (\S\ref{sec:issuance}) is a decreasing function of
+bonded stake: issuance relative to bonded stake is $\approx$11.5\,\% at the
+genesis bonding level and falls as more stake is bonded. Second, issuance is
+distributed chain-wide and pro-rata, so adding validators changes how it is
+divided, not how much is issued; the design gives the foundation no issuance
+reason to keep the set small. Neither property is a return offered to anyone
+(\S\ref{sec:disclaimers}).}
 
 \subsection{What ``decentralised enough'' will mean}
+\label{sec:metrics}
 
 \todo{Define the metrics this roadmap will be measured against in later
 releases (for example: share of bonded stake held outside the foundation,

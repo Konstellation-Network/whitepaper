@@ -38,7 +38,7 @@ bonded to validators, modelled on Ethereum's post-merge issuance
 \label{eq:issuance}
 \end{equation}
 \begin{equation}
-\text{staking yield (APR)} = \frac{F}{\sqrt{\text{bonded \kash}}}
+\text{issuance rate relative to bonded stake} = \frac{F}{\sqrt{\text{bonded \kash}}}
 \label{eq:apr}
 \end{equation}
 
@@ -48,15 +48,16 @@ SDK's default minter, which steers inflation within a 7--20\,\% band toward a
 ignored. The curve is implemented as the stock \code{x/mint} module's
 \code{MintFn} hook, so it adds no custom module to the chain.
 
-$F$ was chosen against the 1\,B \kash{} genesis supply so that the curve pays
-8\,\% at 25\,\% bonded and 4\,\% with everything bonded:
+$F$ was chosen against the 1\,B \kash{} genesis supply so that the curve
+issues 8\,\% of bonded stake per year at 25\,\% bonded and 4\,\% with
+everything bonded:
 
 \begin{table}[H]
 \centering
 \small
 \begin{tabular}{@{}rrrrr@{}}
 \toprule
-Bonded share & Bonded \kash{} & Staking APR & Issued / year & Issued as \% of supply \\
+Bonded share & Bonded \kash{} & Issuance $\div$ bonded & Issued / year & Issued as \% of supply \\
 \midrule
 10\,\% & 100\,M & 12.65\,\% & 12.65\,M & 1.27\,\% \\
 25\,\% & 250\,M & \textbf{8.00\,\%} & \textbf{20.0\,M} & \textbf{2.00\,\%} \\
@@ -65,9 +66,10 @@ Bonded share & Bonded \kash{} & Staking APR & Issued / year & Issued as \% of su
 100\,\% & 1\,B & 4.00\,\% & 40.0\,M & 4.00\,\% \\
 \bottomrule
 \end{tabular}
-\caption{Issuance and yield against bonded stake, $F = 1265$, 1\,B supply
+\caption{Issuance against bonded stake, $F = 1265$, 1\,B supply
 (TOKENOMICS \S2). At the planned genesis bonding of $\approx$120\,M \kash{}
-(\S\ref{sec:allocation}) the curve pays $\approx$11.5\,\%.}
+(\S\ref{sec:allocation}) the curve issues $\approx$11.5\,\% of bonded stake
+per year.}
 \label{tab:issuance}
 \end{table}
 
@@ -75,14 +77,14 @@ Properties of the curve:
 
 \begin{itemize}
 \item Doubling bonded stake raises total issuance by $\sqrt{2}$ ($\times 1.41$)
-  and cuts per-staker yield by the same factor. Yield never reaches zero and is
-  never negative.
+  and cuts issuance per unit of bonded stake by the same factor. Issuance never
+  reaches zero and is never negative.
 \item Because issuance grows sub-linearly in stake, the inflation rate
   (issued $\div$ supply) is bounded above by $F / \sqrt{\text{supply}}$ ---
   4\,\% of the genesis supply with everything bonded.
-\item The yield is chain-wide. Rewards are distributed pro-rata by bonded stake,
-  so the size of the active validator set does not change anyone's yield and
-  the curve adds no concentration incentive of its own.
+\item Issuance is chain-wide and distributed pro-rata by bonded stake, so the
+  size of the active validator set does not change how it is divided per unit
+  of stake, and the curve adds no concentration incentive of its own.
 \item $F$ is a \textbf{protocol constant}, in the sense of Ethereum's
   \code{BASE\_REWARD\_FACTOR}: changing it is a coordinated software upgrade
   reviewed and voted as such, not a governance parameter change.
@@ -107,10 +109,11 @@ every block, together with transaction tips (\S\ref{sec:fees}):
   its delegators pro-rata.
 \end{enumerate}
 
-A delegator's realised yield is therefore approximately
-$\text{APR} \times (1 - 0.02) \times (1 - \text{commission})$; at 25\,\% bonded
-with a 5\,\% commission validator, $8.00\,\% \times 0.98 \times 0.95 \approx
-7.45\,\%$.
+Of the issuance attributable to a delegation, the 2\,\% community tax and
+the validator's commission are deducted before the remainder is credited.
+Issuance credited to stakers is protocol issuance, variable with bonded stake
+and block time, and reduced by slashing; it is not a return offered by anyone
+(\S\ref{sec:disclaimers}).
 
 \subsection{Fees and burn}
 \label{sec:fees}
@@ -128,7 +131,7 @@ Parameter & Value & Note \\
 Initial base fee & $10^{9}$ \esp{} per gas (1 gwei-equivalent) & \code{cosmos/evm} default; adjusts from block~1 \\
 Base-fee change denominator & 8 & at most $\pm$12.5\,\% per block, as Ethereum \\
 Elasticity multiplier & 2 & target utilisation is half the block gas limit \\
-\code{min\_gas\_price} (base-fee floor) & 0 & no protocol floor; the base fee may decay toward zero when the chain is idle. Governance parameter \\
+\code{min\_gas\_price} (base-fee floor) & 0 & no protocol floor; the base fee may decay toward zero when the chain is idle. Governance parameter. The foundation's public RPC nodes apply a node-local minimum of $10^{9}$ \esp{} per gas (1 gwei-equivalent) as a spam guard on what they accept into their mempool; that is a node setting, not a protocol rule, and other nodes may set their own \\
 \code{min\_gas\_multiplier} & 0.5 & a block-level floor on the gas-wanted figure the fee market records, preventing a proposer from pushing the base fee down by over-reporting; not a user-facing charge \\
 \bottomrule
 \end{tabularx}
@@ -269,7 +272,7 @@ Founding team \& early contributors & 22\,\% & 220\,M & \raggedleft 22\,M (10\,\
 Community \& developers & 33\,\% & 330\,M & \raggedleft 50\,M (the community-pool seed) & remaining 280\,M released over 5 years, front-loaded & see Table~\ref{tab:community} \\
 Treasury (foundation) & 25\,\% & 250\,M & \raggedleft 50\,M & 20\,\% liquid at genesis; remainder linear over 48 months & foundation multisig ($\geq$3-of-5); vesting wallet for the locked part \\
 Validator bootstrap \& staking & 12\,\% & 120\,M & \raggedleft 120\,M, bonded & none --- bonded at genesis via gentx & the foundation, as operator of the ten launch validators (\dref{D7}) \\
-Liquidity \& public distribution & 8\,\% & 80\,M & \raggedleft 80\,M & none & foundation, earmarked for DEX liquidity, market making and \legal{any public sale} \\
+Liquidity \& public distribution & 8\,\% & 80\,M & \raggedleft 80\,M & none & foundation, earmarked for \legal{DEX liquidity, market making and any public sale} \\
 \midrule
  & 100\,\% & 1\,000\,M & \raggedleft 322\,M (32.2\,\%) & & \\
 \bottomrule
@@ -304,25 +307,22 @@ programmatically, are the parts that vest.
 Why these numbers:
 
 \begin{itemize}
-\item \legal{\textbf{Team 22\,\%} is the middle of the Layer-1 range and reads as
-  committed rather than extractive. \textbf{10\,\% of each grant is liquid at
-  launch} so members have something in hand; the other 90\,\% is behind a
-  one-year cliff and vests over the following three years, so 90\,\% of the
-  team's allocation is still unsellable in year one.}
+\item \legal{\textbf{Team 22\,\%} is the middle of the Layer-1 range.
+  \textbf{10\,\% of each grant is liquid at launch}; the other 90\,\% is
+  behind a one-year cliff and vests over the following three years, so 90\,\%
+  of the team's allocation is non-transferable in year one.}
 \item \textbf{Community 33\,\% is the largest bucket.} Grants and incentives are
   the actual growth lever for a new EVM chain.
 \item \textbf{Treasury 25\,\%} covers audits (\dref{D9}), infrastructure, legal,
   \legal{listings} and multi-year runway; 20\,\% is liquid because those costs
   start before launch.
 \item \legal{\textbf{Validators 12\,\%, bonded at genesis.} $\approx$120\,M bonded on
-  day one gives $\approx$11.5\,\% staking APR from equation~\ref{eq:apr} --- high
-  enough to pull outside delegation in as the set opens (\S\ref{sec:validators}),
-  and falling naturally as it arrives.}
-\item \legal{\textbf{32.2\,\% liquid at genesis} (bonded validator stake 120\,M,
-  treasury tranche 50\,M, liquidity 80\,M, community-pool seed 50\,M, team
-  22\,M) is enough float for a functioning market without a supply overhang;
-  the bonded 120\,M is not sellable without a 21-day unbond, and the pool's
-  50\,M only moves by governance.}
+  day one puts equation~\ref{eq:apr} at $\approx$11.5\,\% of bonded stake per
+  year, falling as more stake is bonded (\S\ref{sec:validators}).}
+\item \legal{\textbf{32.2\,\% of supply is transferable at genesis} (bonded
+  validator stake 120\,M, treasury tranche 50\,M, liquidity 80\,M,
+  community-pool seed 50\,M, team 22\,M); of that, 120\,M is bonded behind a
+  21-day unbond and 50\,M moves only by governance.}
 \end{itemize}
 
 \begin{table}[H]

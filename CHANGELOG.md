@@ -26,7 +26,9 @@ Not released: no PDF in `releases/`. Every number is taken from
   parameters; D12 Solidity vesting (team 10 % liquid + 90 % cliff-and-linear,
   revocable; community tranches non-revocable).
 - Validator set: ten foundation-run validators at genesis (centralised and
-  permissioned, stated plainly), `max_validators` 30, admission of independent
+  permissioned, stated plainly; all governance power is the foundation's until
+  outside stake is bonded; loss of either cloud provider halts block
+  production), `max_validators` 30, admission of independent
   operators via `MsgCreateValidator` disabled in circuit-breaker genesis state
   (D7 as re-decided 2026-09-20, D16), identical on testnet-1 and mainnet; a staged roadmap for opening the set with dates and triggers
   left as placeholders.
@@ -35,7 +37,10 @@ Not released: no PDF in `releases/`. Every number is taken from
   (D15), bridge caps, halt drill.
 - Compliance (D6): allow/block lists, timelock, emergency freeze with
   auto-expiry, governance override, precompile at `0x…0900`; the §10 positioning
-  and legal-obligation risks stated in full; marked for legal review.
+  and legal-obligation risks stated in full; the current build's residuals
+  stated honestly (a freeze does not immobilise balance — bank-level
+  restriction planned; governance voters are freezable — fix planned);
+  marked for legal review.
 - Account abstraction: ERC-4337 EntryPoints v0.7 / v0.8 and SenderCreators
   preinstalled at canonical addresses, p256 precompile, EIP-7702 handling
   including the compliance interaction; Prague fork at genesis, Osaka not

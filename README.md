@@ -2,8 +2,8 @@
 
 The Konstellation Network whitepaper: LaTeX source and versioned PDF releases.
 
-Kept separate from `docs` because exchanges and investors cite specific
-versions, and tokenomics changes need an auditable history
+Kept separate from `docs` because readers cite specific versions, and
+tokenomics changes need an auditable history
 (`ENGINEERING.md §6.7`).
 
 ## Layout

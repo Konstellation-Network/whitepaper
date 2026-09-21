@@ -23,11 +23,25 @@ move with upstream security releases; the policy in \S\ref{sec:neverfork} is
 what stays fixed.}
 \end{table}
 
-CometBFT provides single-slot finality: a block is final when it is committed,
+CometBFT provides deterministic finality: a block is final when it is committed,
 with no reorganisation and no probabilistic confirmation window. Target block
 time is on the order of 1--2 seconds; the tokenomics record currently assumes
 $\approx$1.5\,s (21\,038\,400 blocks per year) and will be re-derived from
 observed testnet block time before mainnet (TOKENOMICS \S2).
+
+\paragraph{Known divergences from Ethereum.} The execution layer is the
+Prague fork (\dref{D17}); bytecode compiled for the later Osaka fork (for
+example anything using the \code{CLZ} opcode) is invalid here. The
+\code{debug\_traceBlockByNumber} response of the pinned \code{cosmos/evm}
+release omits per-entry transaction hashes, so block-level tracers written
+against go-ethereum's shape need per-transaction tracing instead. A
+transaction that passes the EVM but fails at the Cosmos-SDK level in the
+block is charged gas and is not indexed as an Ethereum transaction:
+\code{eth\_getTransactionReceipt} reports it as not found, and the reason is
+only in the consensus engine's transaction index. The one case a user can hit
+by hand --- a value transfer straight to a module account --- is refused at
+submission with the reason, but a contract's internal call into a blocked
+address still fails invisibly to the \code{eth\_} namespace.
 
 \subsection{Imported versus implemented}
 \label{sec:imported}
@@ -69,7 +83,7 @@ IBC clients, connections, channels, ICS-20 & \code{ibc-go} \\
 Implemented in \code{konstellation} & Notes \\
 \midrule
 \code{app.go} wiring and ante-handler chain & the order of ante decorators is security-critical and is in audit scope \\
-\code{x/compliance} & chain-wide allow/block lists, timelock, emergency freeze, precompile, IBC receive gate (\dref{D6}, \S\ref{sec:compliance}) \\
+\code{x/compliance} & allow/block lists enforced at the transaction boundary, timelock, emergency freeze, precompile, IBC receive gate (\dref{D6}, \S\ref{sec:compliance}) \\
 \code{x/ratelimit} & IBC value-flow quotas; written because no rate limiter exists for \code{ibc-go} v11 (\dref{D15}, \S\ref{sec:rails}) \\
 Issuance function & the \dref{D4} curve, installed as the stock \code{x/mint} module's \code{MintFn} hook --- not a module \\
 Base-fee burn & an application-level EndBlock step (\dref{D5}) \\
@@ -112,8 +126,12 @@ paths, and two of the relevant release notes described the security backport
 only as ``important security fixes'' (ENGINEERING \S2.1, \S4).}
 
 The conclusion is that every fork hop between upstream and a running chain adds
-latency to security patches, and that latency is what the exploits used. The
-policy that follows:
+latency to security patches, and that latency is what the August exploit
+used. The January loss was different: it was an upstream zero-day, published
+only in March, that no patch-latency policy would have prevented. The
+never-fork policy shortens exposure to known fixes; it does not remove
+exposure to unknown bugs in upstream code, which this design accepts as a
+dependency (\S\ref{sec:audit}). The policy that follows:
 
 \begin{itemize}
 \item Every upstream patch release is treated as a security release until
@@ -134,7 +152,9 @@ policy that follows:
 \end{itemize}
 
 A small validator set is, in this one respect, a security advantage: a
-coordinated binary swap across ten nodes under one operator takes under an hour.
+coordinated binary swap across ten nodes under one operator takes under an
+hour. It is also, stated plainly, the foundation halting and patching the
+chain on its own authority without a vote (\S\ref{sec:upgrades}).
 
 \subsection{Execution: sequential at launch}
 \label{sec:blockstm}
@@ -174,8 +194,8 @@ by its sentries. Validator signing keys are held by threshold signers
 (Horcrux across three or more regions is the preferred configuration for a chain
 holding user funds), which both provides high availability and makes
 double-signing cryptographically hard. Release binaries are never built on a
-validator: they are produced by continuous integration from a signed tag, built
-twice independently, and published only if both builds agree on the checksum
-(ENGINEERING \S2.6, \S9). Validators are spread across two cloud providers,
-autonomous systems and jurisdictions (Hetzner: Germany and Finland; Google
-Cloud: United States).
+validator: they are to be produced by continuous integration from a signed
+tag, built twice independently, and published only if both builds agree on
+the checksum (ENGINEERING \S2.6, \S9; release pipeline under review).
+Validators are spread across more than one cloud provider, autonomous system
+and jurisdiction; the exact placement is not published (ENGINEERING \S6.4).

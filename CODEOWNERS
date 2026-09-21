@@ -9,7 +9,7 @@
 
 * @defidevrel @Evangel90 @Levi-Ojukwu @OlolaJaco @Psalmuel01
 
-# A released PDF is what exchanges and investors cite by version, and it is
+# A released PDF is what readers cite by version, and it is
 # never edited in place (ENGINEERING.md §6.7). Same owners, listed separately so
 # a stricter rule (e.g. two reviewers, or a legal reviewer) can be attached here
 # without touching the catch-all above. CODEOWNERS is last-match-wins.

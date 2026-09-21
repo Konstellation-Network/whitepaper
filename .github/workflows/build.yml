@@ -23,6 +23,9 @@ jobs:
       - name: latexmk -pdf
         uses: xu-cheng/latex-action@6549dc21effb2730855a1281407ecfcececc6c1b # 4.1.0
         with:
+          # The TeX image is pinned by digest as well, so neither the action tag
+          # nor its default image can drift under us (ENGINEERING.md §2.3 spirit).
+          docker_image: ghcr.io/xu-cheng/texlive-alpine@sha256:11383430b9a3e48c0b79339f34d8092f942f897d91ab3749d4899d06731fea7f # :latest as of 2026-09-21
           root_file: whitepaper.tex
           working_directory: src
           latexmk_use_lualatex: false
@@ -42,9 +45,12 @@ jobs:
           echo "todo placeholders in this draft: $n"
           echo "todo placeholders: $n" >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      # Only same-repo pushes and PRs upload: a fork PR's artifact could be
+      # mistaken for a project build. Fork-PR authors download from their own run.
+      - if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: whitepaper-${{ github.sha }}
+          name: draft-${{ github.event_name == 'pull_request' && format('pr{0}-', github.event.number) || '' }}${{ github.sha }}
           path: build/whitepaper.pdf
           if-no-files-found: error
           retention-days: 30
@@ -53,14 +59,22 @@ jobs:
   # PR that modifies or deletes a file already in releases/.
   releases-immutable:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - run: |
-          changed=$(git diff --name-status "origin/${{ github.base_ref }}"...HEAD -- releases/ | grep -E '^(M|D|R)' || true)
+          # PRs: diff against the base branch. Pushes to main: diff against the
+          # previous tip, so a direct push cannot slip past the PR check.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="origin/${{ github.base_ref }}"; range="$base...HEAD"
+          else
+            range="${{ github.event.before }}..HEAD"
+          fi
+          # Anything other than a pure addition (modify, delete, rename, type
+          # change, copy) to an existing release is refused.
+          changed=$(git diff --name-status "$range" -- releases/ | grep -vE '^A' || true)
           if [ -n "$changed" ]; then
             echo "releases/ files are never edited or removed in place:" >&2
             echo "$changed" >&2

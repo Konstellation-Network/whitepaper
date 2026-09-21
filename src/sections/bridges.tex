@@ -4,9 +4,10 @@
 \subsection{No bridge on day one}
 
 Konstellation launches \textbf{without a bridge} (\dref{D8}). No canonical
-token bridge to Ethereum or any other network exists at genesis, and no IBC
-channel carries value until governance has set a rate limit on it
-(\S\ref{sec:ratelimit}). The consequence is that the total value on the chain at
+token bridge to Ethereum or any other network exists at genesis, and the
+launch procedure is that no IBC channel carries value until governance has set
+a rate limit on it (\S\ref{sec:ratelimit}) --- a procedure, not a property of
+the software, as \S\ref{sec:ratelimit} explains. The consequence is that the total value on the chain at
 launch is bounded by what is allocated at genesis --- a \textbf{value ceiling}
 that limits the blast radius of any defect while the chain soaks under real
 conditions (launch-sequence phase~9, \S\ref{sec:launch}).
@@ -69,7 +70,9 @@ Two properties are worth stating for the reader assessing trust:
 \item \textbf{Authority is governance.} A 3-of-5 operations multisig holds
   super-admin permission, granted as a genesis entry, so the fastest response to
   an advisory is a multisig transaction rather than a three-day vote; governance
-  can revoke that permission. \todo{The mainnet operations multisig signer set
+  can revoke that permission, and a revocation must also revoke any permissions
+  that administrator granted to other accounts, since a super-admin can
+  delegate. \todo{The mainnet operations multisig signer set
   is not yet chosen; it is a genesis entry, not code.}
 \end{itemize}
 
@@ -79,7 +82,7 @@ also the mechanism of validator admission: \code{MsgCreateValidator} ships
 disabled in genesis state (\dref{D16}, \S\ref{sec:admission}).
 
 The Cosmos SDK deprecated this package in v0.54 and no longer maintains it.
-Konstellation uses it anyway --- it is about 1\,300 stable lines and the
+Konstellation uses it anyway --- it is a small, stable package and the
 application hook it needs is first-class --- and a pinned-version test fails
 with a re-check checklist on every SDK bump; if a later SDK drops the package it will
 be vendored into the chain and enter the audit scope (ENGINEERING \S7.1).
@@ -89,8 +92,9 @@ be vendored into the chain and enter the audit scope (ENGINEERING \S7.1).
 
 The highest-value single control on the list: it converts ``drained'' into
 ``lost one window''. No rate-limiting module exists for \code{ibc-go} v11, so
-Konstellation ships its own \code{x/ratelimit}, roughly 800 lines modelled on
-the semantics of the Cosmos community's earlier module (\dref{D15}). It sits
+Konstellation ships its own \code{x/ratelimit}, about 1\,400 lines excluding
+tests and generated code, modelled on the semantics of the Cosmos community's
+earlier module (\dref{D15}). It sits
 outermost on the transfer stack, for IBC v1 and v2 alike.
 
 \begin{itemize}
@@ -104,9 +108,17 @@ outermost on the transfer stack, for IBC v1 and v2 alike.
   advance.
 \item Quotas are on \textbf{net} flow: a round trip does not consume them, and a
   send that fails or times out within the window is undone.
-\item Quotas are \textbf{set and removed only by governance}, per channel, and
-  \textbf{no channel carries value on mainnet until governance has set one}
-  (launch-sequence phase~9 gate). \code{testnet-1} opens no external channels.
+\item Quotas are \textbf{set and removed only by governance}, per channel. The
+  launch procedure is that \textbf{no channel carries value on mainnet until
+  governance has set one} (launch-sequence phase~9 gate). That is a procedure,
+  not a property: a path with no quota passes the rate limiter untouched, and
+  IBC channel handshakes are permissionless, so a fresh channel is an
+  unlimited exit until it is quoted (STATUS \S5a, P18). The hard stop is the
+  circuit breaker tripping \code{MsgTransfer}, which stops every IBC send.
+  \todo{Whether \code{MsgTransfer} ships tripped in the mainnet genesis state
+  (the \dref{D16} pattern), or the rate limiter is made default-deny for
+  unquoted paths, is not decided (STATUS \S5a, P18).} \code{testnet-1} opens
+  no external channels.
 \item The module fails closed on a store error rather than open.
 \end{itemize}
 

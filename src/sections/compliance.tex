@@ -19,12 +19,28 @@ holding two lists (\dref{D6}, ENGINEERING \S10):
   --- a permissioned pool, a regulated asset --- can consult it. Its use is
   entirely the contract author's choice.
 \item[A blocklist (\code{isFrozen}).] Addresses the chain refuses to transact
-  with. This list is enforced \textbf{chain-wide}: every transaction touching
-  a listed address --- EVM or Cosmos, native \kash{} included --- is refused
-  before execution, at the ante handler, and a synchronous mempool pre-check
-  returns ``address is frozen'' at the JSON-RPC so the sender learns
-  immediately. An incoming IBC transfer to a frozen address is refused at
-  receipt and refunded by the sending chain.
+  with. The list is enforced at the transaction level, for EVM and Cosmos
+  transactions alike: any transaction signed by a listed address, or addressed
+  directly to one, is refused before execution at the ante handler, and a
+  synchronous mempool pre-check returns ``address is frozen'' at the JSON-RPC
+  so the sender learns immediately. An incoming IBC transfer to a frozen
+  address is refused at receipt and refunded by the sending chain.
+
+  Stated precisely, \textbf{a freeze stops an address from signing and from
+  being the direct recipient of a transaction; in the current build it does
+  not immobilise the address's balance.} Enforcement is at the transaction
+  boundary, not at the bank level, so an allowance granted before the freeze
+  --- through the \code{werc20} precompile or any contract --- can still move
+  the frozen balance, and a contract call can still deposit into a frozen
+  address. This was reproduced on the development chain (STATUS \S2a, \S5a
+  P20). A bank-level send restriction keyed on the block list, covering the
+  precompiles and IBC alike, is planned before mainnet and is in the audit
+  scope; until it ships, the semantics are as stated in this paragraph, not
+  ``chain-wide''.
+
+  The block-list check is governed by an \code{enforce} parameter that
+  governance can switch, so it can be turned off by proposal without a
+  software upgrade.
 \end{description}
 
 Both lists are readable from Solidity through a read-only precompile,
@@ -76,6 +92,13 @@ authority is set, only governance can touch the lists.
 
 \todo{The mainnet compliance authority multisig --- its signers, threshold and
 the legal entity behind it --- is not yet chosen. It is a genesis entry.}
+\todo{Whether the five multisigs named in this document --- the compliance
+authority, the 3-of-5 operations multisig, the team-grant revoker, the
+treasury and the community-tranche beneficiary --- are distinct key sets is
+unstated (STATUS \S5a, P19). The intent is that the compliance authority and
+the operations multisig are not the treasury; one shared key set would mean
+one compromise freezes addresses, pauses the EVM and IBC, and controls the
+treasury and every vesting wallet.}
 
 \subsection{What the chain deliberately does not do}
 
@@ -109,7 +132,17 @@ qualification (ENGINEERING \S10, \dref{D6}).
   reduce the risk; they do not remove it. A compromise of the authority could
   freeze any address immediately and, by scheduling the permanent entry, hold
   it frozen until a governance proposal (one day expedited, three days
-  otherwise) removes it or replaces the authority.
+  otherwise) removes it or replaces the authority. That override presumes the
+  voters are not themselves frozen. In the current build only module
+  accounts, the governance module and the authority itself are protected from
+  freezing; validator operator accounts and the operations multisig are not,
+  and a frozen signer cannot submit a vote or a deposit. A compromised
+  authority could therefore freeze the ten operators and the operations
+  multisig, schedule the permanent entries, and leave governance unable to
+  reach quorum (STATUS \S5a, P17). Exempting governance messages from the
+  freeze check and protecting bonded operators and circuit-breaker
+  administrators from freezing is planned before mainnet and is in the audit
+  scope; until it ships, this residual stands.
 \item \legal{\textbf{The ability to freeze can create a legal obligation to
   freeze}, across multiple jurisdictions. Operating the authority is an
   ongoing, staffed function with liability attached, not a one-time deployment.

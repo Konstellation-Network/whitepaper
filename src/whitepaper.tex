@@ -28,7 +28,7 @@
 \usepackage{float}
 \usepackage{caption}
 \usepackage[hidelinks]{hyperref}
-\hypersetup{pdftitle={Konstellation Network Whitepaper},pdfauthor={Konstellation Foundation}}
+\hypersetup{pdftitle={Konstellation Network Whitepaper},pdfauthor={}}
 
 % ---------------------------------------------------------------------------
 % Document metadata — bump on every release; keep in sync with CHANGELOG.md
@@ -52,7 +52,6 @@
 }
 \newcommand{\listoftodos}{%
   \section*{Open items requiring human input}%
-  \addcontentsline{toc}{section}{Open items requiring human input}%
   Every item below is a \texttt{\textbackslash todo} placeholder in the source.
   None of them may be resolved by guessing; each needs a recorded decision in
   \texttt{ENGINEERING.md} or \texttt{TOKENOMICS.md} first.\par\medskip
@@ -82,7 +81,7 @@
 \title{\textbf{Konstellation Network}\\[0.4em]
   \large A sovereign, EVM-compatible Layer~1 on the Cosmos~SDK\\[0.6em]
   \normalsize Whitepaper \wpversion}
-\author{Konstellation Foundation}
+\author{Konstellation Network}
 \date{\wpdate}
 
 \begin{document}
@@ -98,8 +97,9 @@ decision (marked \dref{D1}--\dref{D17}) or to the tokenomics record; where a
 decision has not been made the text says so explicitly rather than guessing.
 Passages marked \textcolor{legalcolor}{[legal review]} have not yet been reviewed
 by counsel. See the disclaimers in \S\ref{sec:disclaimers}.
-\todo{Confirm the legal name of the publishing entity named as author and the
-jurisdiction it is organised in.}}}
+\todo{The publishing entity is not yet decided; the author line and the PDF
+author field are left as the project name and blank respectively until it
+is, together with its jurisdiction.}}}
 \end{center}
 
 \vspace{1em}
@@ -113,14 +113,14 @@ behind it (consume upstream, never fork; ship the smallest possible amount of
 custom consensus code), the economics of \kash{} (a stake-based issuance curve
 paired with an EIP-1559 base-fee burn), the validator set as it will actually be
 at launch and how it is intended to open, the deliberate absence of a bridge on
-day one, the chain-wide compliance module and the trade-offs it carries, native
+day one, the compliance module and the trade-offs it carries, native
 account-abstraction support, and the security and launch process. It is
 written to be cited by version: economic parameters change only with a new
 release of this document.
 \end{abstract}
 
 \vspace{1em}
-\tableofcontents
+{\small\tableofcontents}
 \clearpage
 
 \input{sections/overview}

@@ -6,7 +6,7 @@ current source is a v1.0 *draft* (see `../CHANGELOG.md`).
 Rules (ENGINEERING.md §6.7):
 
 - One file per version: `vX.Y.pdf`, plus `vX.Y.pdf.sha256`.
-- **Never edited in place.** Exchanges and investors cite specific versions,
+- **Never edited in place.** Readers cite specific versions,
   and tokenomics changes need an auditable history. A correction is a new
   version. CI refuses any pull request that modifies or deletes a file here.
 - A release is cut with `make release VERSION=vX.Y` from the repo root, which
