@@ -1,0 +1,139 @@
+\section{Bridges, value ceiling and safety rails}
+\label{sec:bridges}
+
+\subsection{No bridge on day one}
+
+Konstellation launches \textbf{without a bridge} (\dref{D8}). No canonical
+token bridge to Ethereum or any other network exists at genesis, and the
+launch procedure is that no IBC channel carries value until governance has set
+a rate limit on it (\S\ref{sec:ratelimit}) --- a procedure, not a property of
+the software, as \S\ref{sec:ratelimit} explains. The consequence is that the total value on the chain at
+launch is bounded by what is allocated at genesis --- a \textbf{value ceiling}
+that limits the blast radius of any defect while the chain soaks under real
+conditions (launch-sequence phase~9, \S\ref{sec:launch}).
+
+A bridge contract is the highest-priority audit item on this chain's list
+because, once one exists, it is the largest pool of value reachable from a
+single bug (ENGINEERING \S12). Shipping it later, audited, capped and after a soak is a
+deliberate trade of early liquidity for a smaller worst case.
+
+\subsection{The sequence for opening one}
+\label{sec:bridgeseq}
+
+The steps once the chain is live, in order (\dref{D8}):
+
+\begin{enumerate}
+\item \textbf{Soak.} \code{konstellation-1} runs under the value ceiling for a
+  month (\S\ref{sec:launch}, phase~9).
+\item \textbf{Build and audit, in parallel with the soak.} The bridge contract
+  and the IBC rate-limiting middleware are built and audited. (The rate limiter
+  is already built; see \S\ref{sec:ratelimit}. The bridge is not.)
+\item \textbf{Calibrate caps.} Hard daily and total caps are set using the
+  usage signal from the soak period.
+\item \textbf{Open, with caps enforced in the contract.} The bridge opens only
+  once the soak is clean, both components are audited, and the caps are set.
+  Caps are enforced in the contract, never in a frontend.
+\end{enumerate}
+
+\todo{Bridge design is undecided: the counterpart network(s), the trust model
+(light client, multisig, third-party messaging layer), the operator, and the
+initial cap values. \dref{D8} records only that none of it ships on day one and
+the order in which it will.}
+
+\subsection{Safety rails}
+\label{sec:rails}
+
+Four controls ship before any user money moves (ENGINEERING \S13). They are
+independent of bridge timing: the first two are in place at genesis, the
+third applies once a bridge exists, and the fourth is a rehearsal completed
+on \code{testnet-1} before mainnet.
+
+\subsubsection{Circuit breaker}
+\label{sec:circuit}
+
+The Cosmos SDK circuit breaker (\code{contrib/x/circuit}, \dref{D14}) can
+disable specific message types without halting the chain. It is checked at the
+message router, in the ante handler and in the mempool pre-check, so a disabled
+message is refused at submission with the reason; the check walks into
+\code{authz}-nested messages, so a disabled type cannot be smuggled into a
+block inside a \code{MsgExec}; and it wraps the transaction-path precompiles,
+which call keepers directly and never see the router, so that disabling an
+IBC transfer also closes the ICS-20 precompile to every contract and EOA.
+
+Two properties are worth stating for the reader assessing trust:
+
+\begin{itemize}
+\item \textbf{The breaker cannot weld itself shut.} It never disables its own
+  messages or governance's, whatever the disable list says, and a trip naming
+  one of them is refused. A mistaken or compromised administrator cannot lock
+  out the reset.
+\item \textbf{Authority is governance.} A 3-of-5 operations multisig holds
+  super-admin permission, granted as a genesis entry, so the fastest response to
+  an advisory is a multisig transaction rather than a three-day vote; governance
+  can revoke that permission, and a revocation must also revoke any permissions
+  that administrator granted to other accounts, since a super-admin can
+  delegate. \todo{The mainnet operations multisig signer set
+  is not yet chosen; it is a genesis entry, not code.}
+\end{itemize}
+
+In operational terms: disabling \code{MsgTransfer} stops all IBC sends, Cosmos
+and EVM; disabling \code{MsgEthereumTx} pauses the whole EVM. The breaker is
+also the mechanism of validator admission: \code{MsgCreateValidator} ships
+disabled in genesis state (\dref{D16}, \S\ref{sec:admission}).
+
+The Cosmos SDK deprecated this package in v0.54 and no longer maintains it.
+Konstellation uses it anyway --- it is a small, stable package and the
+application hook it needs is first-class --- and a pinned-version test fails
+with a re-check checklist on every SDK bump; if a later SDK drops the package it will
+be vendored into the chain and enter the audit scope (ENGINEERING \S7.1).
+
+\subsubsection{IBC rate limiting}
+\label{sec:ratelimit}
+
+The highest-value single control on the list: it converts ``drained'' into
+``lost one window''. No rate-limiting module exists for \code{ibc-go} v11, so
+Konstellation ships its own \code{x/ratelimit}, about 1\,400 lines excluding
+tests and generated code, modelled on the semantics of the Cosmos community's
+earlier module (\dref{D15}). It sits
+outermost on the transfer stack, for IBC v1 and v2 alike.
+
+\begin{itemize}
+\item Quotas are per (channel, denomination), expressed as a \textbf{percentage
+  of the denomination's supply} snapshotted at the start of each window,
+  \textbf{optionally capped by an absolute amount}; the lower of the two
+  applies. The absolute cap exists because a percentage alone is a weak ceiling
+  for the native token --- 1\,\% of \kash{} supply is 1\,\% of the whole chain
+  --- and because a foreign token's voucher has no supply before its first
+  packet, so only an absolute receive cap makes such a path limitable in
+  advance.
+\item Quotas are on \textbf{net} flow: a round trip does not consume them, and a
+  send that fails or times out within the window is undone.
+\item Quotas are \textbf{set and removed only by governance}, per channel. The
+  launch procedure is that \textbf{no channel carries value on mainnet until
+  governance has set one} (launch-sequence phase~9 gate). That is a procedure,
+  not a property: a path with no quota passes the rate limiter untouched, and
+  IBC channel handshakes are permissionless, so a fresh channel is an
+  unlimited exit until it is quoted (STATUS \S5a, P18). The hard stop is the
+  circuit breaker tripping \code{MsgTransfer}, which stops every IBC send.
+  \todo{Whether \code{MsgTransfer} ships tripped in the mainnet genesis state
+  (the \dref{D16} pattern), or the rate limiter is made default-deny for
+  unquoted paths, is not decided (STATUS \S5a, P18).} \code{testnet-1} opens
+  no external channels.
+\item The module fails closed on a store error rather than open.
+\end{itemize}
+
+Alongside it, an ICS-20 receive gate in the compliance module refuses incoming
+transfers to a frozen address; the packet is error-acknowledged and the sending
+chain refunds (\S\ref{sec:compliance}).
+
+\subsubsection{Bridge caps}
+
+Enforced in the bridge contract, not the frontend (\S\ref{sec:bridgeseq}). Not
+applicable until a bridge exists.
+
+\subsubsection{A rehearsed halt drill}
+
+Executed on \code{testnet-1} before mainnet: a simulated advisory at an awkward
+hour, a halt at a height, a patch, a coordinated restart, back in under 90
+minutes. Repeated quarterly thereafter and written up each time (ENGINEERING
+\S13, \S17). The first mainnet incident must not be the first rehearsal.

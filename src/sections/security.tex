@@ -1,0 +1,143 @@
+\section{Security, audits and launch}
+\label{sec:security}
+
+\subsection{Threat model in one paragraph}
+
+The losses on comparable chains in 2026 came from balance-accounting bugs in
+the EVM state layer. One was delivered through forks that lagged an upstream
+fix by months; the other was an upstream zero-day, exploited in January and
+published in March, that no patch-latency policy would have prevented. A
+bridge, where one exists, is the largest pool of value reachable from a single
+such bug (ENGINEERING \S12). Konstellation's posture follows: consume upstream
+unforked and patch within a day, which shortens exposure to known fixes but
+does not remove exposure to unknown bugs (\S\ref{sec:neverfork}); keep the custom consensus-critical surface small and
+audit exactly that surface (\S\ref{sec:audit}); hold no bridged value until the
+chain has soaked and the bridge is audited and capped (\S\ref{sec:bridges});
+and have on-chain controls that turn a live exploit into a bounded loss
+(\S\ref{sec:rails}).
+
+\subsection{Audit plan: audit the delta}
+\label{sec:audit}
+
+\code{cosmos/evm} was independently audited upstream (Sherlock, Interchain
+Labs collaborative audit, July 2025). That audit predates the v0.7 line and
+did not find either of the 2026 bugs; it is not a guarantee. Konstellation
+nonetheless directs its own audit budget at the delta --- what this chain
+adds --- because that is the code nobody else reviews, and because the
+security of the upstream framework is an accepted dependency of this design
+(\S\ref{sec:neverfork}), maintained by upstream's own process rather than by
+a re-audit this project could afford. The firm is \textbf{Informal Systems} (\dref{D9}), chosen for its depth in
+the Cosmos SDK and CometBFT and for its formal-methods practice (ENGINEERING
+\S12). Scope:
+
+\begin{itemize}
+\item \code{app.go} module wiring and the ante-handler ordering.
+\item The custom modules: \code{x/compliance} (keeper, ante extractor, mempool
+  pre-check, precompile, IBC gate; about 2\,200 lines excluding tests and
+  generated code), \code{x/ratelimit} (keeper, v1 and v2 middleware; about
+  1\,400 lines on the same basis), and the circuit-breaker wiring including
+  its precompile wrapper.
+\item The issuance function and the base-fee burn.
+\item Genesis parameters --- a misconfigured parameter is a vulnerability.
+\item Preinstall contracts and their deterministic addresses.
+\item Upgrade handlers --- a bad migration bricks the chain.
+\item Bridge contracts, highest priority once one exists.
+\end{itemize}
+
+The audit will be scheduled once the safety rails and the compliance module are
+stable (launch-sequence phase~4), so that the report describes the code that
+ships. For the Solidity portion --- the vesting contracts, \code{WKASH}, and
+eventually the bridge --- a contest on a platform such as Sherlock, Code4rena
+or Cantina is a cost-effective complement; contests are a poor fit for Go
+consensus code and are not used for it. A re-audit of fixes is budgeted; the
+first report is not the end. The report is published before mainnet genesis
+and archived in the chain repository.
+
+\todo{Audit dates, statement of work and budget with Informal Systems are not
+yet fixed; scoping calls are the next step recorded in the status log.}
+
+\subsection{Bug bounty}
+
+A funded bug bounty is \textbf{live before mainnet} (launch-sequence phase~7).
+The ecosystem and developer grants sub-bucket names bug bounties among its
+purposes (\S\ref{sec:allocation}), but its first tranche vests through year
+one, after the bounty must be live. \todo{Platform (the engineering record
+names Immunefi as the candidate), reward tiers, the in-scope asset list and
+the initial funding source are not decided.}
+
+\subsection{Continuous assurance}
+
+\begin{itemize}
+\item \textbf{Dependency verification.} The build refuses any local replacement
+  of the four protected upstream modules; the dependency graph is checked in
+  CI on every change.
+\item \textbf{Vulnerability scanning.} \code{govulncheck} on every change and
+  nightly; each accepted finding is justified in the engineering record and
+  re-reviewed on every upstream bump.
+\item \textbf{Upstream watch.} An automated watcher opens a tracked issue within
+  six hours of any new \code{cosmos/evm} release; review is complete within 24
+  hours of assignment, and the diff of the EVM state layer and precompiles is
+  recorded (ENGINEERING \S17).
+\item \textbf{Reproducible releases} (release pipeline under review). A signed
+  tag is to trigger two independent CI builds whose checksums must agree, with
+  provenance and published SHA-256 sums; operators verify before staging with
+  Cosmovisor, with automatic download disabled.
+\item \textbf{Test harnesses.} An in-process integration harness drives the real
+  application with signed transactions; an end-to-end harness runs real nodes,
+  including a two-chain IBC setup with a relayer, on every change.
+\item \textbf{Monitoring.} Every node exports metrics; paging is on missed
+  blocks, falling peer count, block-time drift, disk headroom and --- the
+  exploit tripwire --- no new blocks.
+\end{itemize}
+
+\subsection{Launch sequence}
+\label{sec:launch}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}cL@{}}
+\toprule
+Phase & Gate \\
+\midrule
+0 & Scaffold the chain from the upstream reference, pin \code{cosmos/evm} v0.7.3, zero local replaces \\
+1 & \code{govulncheck} clean, CI green, dependency graph verified \\
+2 & Customise: wiring, genesis parameters, preinstalls, custom modules \\
+3 & Ship all four safety rails (\S\ref{sec:rails}) \\
+4 & Audit the delta (\S\ref{sec:audit}) \\
+5 & \textbf{\code{testnet-1} with the ten foundation-run validators} (\dref{D7}), six to eight weeks minimum, including one state-breaking upgrade drill, one chaos test (40\,\% of validators killed mid-block --- deliberately past the halt threshold, to rehearse recovery), one halt-and-restart drill, and at least one validator admission through the \dref{D16} procedure (\S\ref{sec:admission}) \\
+6 & Admit the first independent operators onto \code{testnet-1} through the \dref{D16} procedure; they find the gaps in the validator documentation that in-house engineers cannot see; fix the documentation before mainnet \\
+7 & Bug bounty live, \textbf{before} mainnet \\
+8 & Genesis ceremony: genesis-transaction collection, published genesis hash, independent verification by every operator \\
+9 & \textbf{\code{konstellation-1} with a value ceiling} (\dref{D8}): no bridge; by procedure, no IBC channel carrying value until governance has set a rate limit on it (\S\ref{sec:ratelimit}). Soak a month. Lift the cap after the audit and a clean run \\
+10 & Enable parallel execution by governance upgrade after the shadow node shows a clean month (\S\ref{sec:blockstm}) \\
+\bottomrule
+\end{tabularx}
+\caption{Launch sequence (ENGINEERING \S15). At the date of this draft phases
+0--3 are complete and phase~4 has not started.}
+\end{table}
+
+\code{testnet-1} exists to measure what mainnet will do: issuance, burn and
+staking parameters are identical on both networks, and the one tokenomics
+parameter that testnet exists to calibrate is \code{blocks\_per\_year}
+(\S\ref{sec:issuance}). Governance timing on testnet is compressed (hours, not
+days) so that upgrade drills can run in a working day (ENGINEERING \S18).
+
+\todo{No calendar dates exist for phases 4--9. Do not infer any from this
+document.}
+
+\subsection{Upgrades}
+\label{sec:upgrades}
+
+Planned mainnet upgrades are governance proposals: a signed release, an upgrade
+document in the public \code{networks} repository giving the halt height,
+binary URL, checksum, configuration deltas and a rollback note, a
+\code{MsgSoftwareUpgrade} setting the halt height, and Cosmovisor swapping the
+pre-staged binary at that height. Emergency security patches do not wait for
+a vote: the foundation halts the chain at a height and swaps the binary on its
+own authority, coordinated over the validators' incident channel within the
+24-hour readiness target of \S\ref{sec:neverfork}, and records the upgrade
+on-chain afterwards. That is the same power described in \S\ref{sec:validators}
+and is not independent of the foundation. One
+upgrade-handler package is kept per release, permanently, so the upgrade
+history is auditable in code.
