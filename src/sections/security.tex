@@ -105,7 +105,7 @@ Phase & Gate \\
 2 & Customise: wiring, genesis parameters, preinstalls, custom modules \\
 3 & Ship all four safety rails (\S\ref{sec:rails}) \\
 4 & Audit the delta (\S\ref{sec:audit}) \\
-5 & \textbf{\code{testnet-1} with the ten foundation-run validators} (\dref{D7}), six to eight weeks minimum, including one state-breaking upgrade drill, one chaos test (40\,\% of validators killed mid-block --- deliberately past the halt threshold, to rehearse recovery), one halt-and-restart drill, and at least one validator admission through the \dref{D16} procedure (\S\ref{sec:admission}) \\
+5 & \textbf{\code{testnet-1} with the four foundation-run validators} (\dref{D7}), six to eight weeks minimum, including one state-breaking upgrade drill, one chaos test (40\,\% of validators killed mid-block --- deliberately past the halt threshold, to rehearse recovery), one halt-and-restart drill, and at least one validator admission through the \dref{D16} procedure (\S\ref{sec:admission}) \\
 6 & Admit the first independent operators onto \code{testnet-1} through the \dref{D16} procedure; they find the gaps in the validator documentation that in-house engineers cannot see; fix the documentation before mainnet \\
 7 & Bug bounty live, \textbf{before} mainnet \\
 8 & Genesis ceremony: genesis-transaction collection, published genesis hash, independent verification by every operator \\
@@ -122,6 +122,9 @@ staking parameters are identical on both networks, and the one tokenomics
 parameter that testnet exists to calibrate is \code{blocks\_per\_year}
 (\S\ref{sec:issuance}). Governance timing on testnet is compressed (hours, not
 days) so that upgrade drills can run in a working day (ENGINEERING \S18).
+Every release, including every mainnet upgrade, is deployed to
+\code{testnet-1} first, then to \code{devnet-1} one to two weeks before
+mainnet, then to \code{konstellation-1} (\S\ref{sec:networks}).
 
 \todo{No calendar dates exist for phases 4--9. Do not infer any from this
 document.}

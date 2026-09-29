@@ -19,7 +19,7 @@ a standard SDK application: \code{konstellationd} is a single Go binary, upgrade
 are coordinated by governance and Cosmovisor, and the chain speaks IBC.
 
 The chain is designed to hold real user funds from its first block, secured by
-ten foundation-run validators across two cloud providers, autonomous systems
+four foundation-run validators across two cloud providers, autonomous systems
 and jurisdictions, with admission of further validators permissioned at launch. That
 combination --- real value, a small set --- drives every
 conservative choice in this document: the never-fork policy
@@ -52,6 +52,8 @@ Gas token & \kash{} (the same asset; no wrapped or secondary gas token) & \dref{
 Bech32 address prefix & \code{kons} & \dref{D3} \\
 Mainnet network id (Cosmos chain-id) & \code{konstellation-1} & --- \\
 Mainnet EIP-155 chain ID & \textbf{5667} & \dref{D1} \\
+Devnet network id (Cosmos chain-id) & \code{devnet-1} & \dref{D7} \\
+Devnet EIP-155 chain ID & \textbf{56672} & \dref{D7} (2026-09-29) \\
 Testnet network id (Cosmos chain-id) & \code{testnet-1} & --- \\
 Testnet EIP-155 chain ID & \textbf{56671} & \dref{D1} \\
 Local development EIP-155 chain ID & 56670 & \dref{D1} follow-up \\
@@ -59,9 +61,10 @@ Genesis supply & 1\,000\,000\,000 \kash{} & TOKENOMICS \S7 \\
 \bottomrule
 \end{tabularx}
 \caption{Fixed identifiers. \esp{} is the on-chain base unit; \kash{} is the
-display unit. Both mainnet and testnet chain IDs were verified absent from the
-\code{ethereum-lists/chains} registry on 2026-09-13 and will be registered there
-before testnet launch.}
+display unit. The mainnet and testnet chain IDs were verified absent from the
+\code{ethereum-lists/chains} registry on 2026-09-13, the devnet ID on
+2026-09-29; all three will be registered there before the first public
+network launches.}
 \label{tab:naming}
 \end{table}
 
@@ -73,10 +76,29 @@ baked into the genesis state; Solidity can also reach the native token through
 the \code{werc20} precompile shipped by \code{cosmos/evm} (ENGINEERING \S6.3).
 
 \subsection{Networks}
+\label{sec:networks}
 
-One binary and one codebase serve both networks. \code{konstellationd} does not
+Konstellation runs three public networks (\dref{D7}, 2026-09-29):
+
+\begin{description}[style=nextline]
+\item[\code{devnet-1} --- for application developers.] The network dapp
+  developers build and test on. One foundation-run validator, the same
+  release as mainnet, test \kash{} from a faucet, rarely reset.
+\item[\code{testnet-1} --- for validators and operations.] Four
+  foundation-run validators. New releases land here first; upgrade drills,
+  chaos tests, halt-and-restart drills and validator admissions
+  (\S\ref{sec:admission}) are rehearsed here, so it may be disrupted.
+\item[\code{konstellation-1} --- mainnet.] Four foundation-run validators at
+  genesis, admission permissioned (\S\ref{sec:validators}).
+\end{description}
+
+A release reaches \code{testnet-1} first, then \code{devnet-1} one to two
+weeks before mainnet, then \code{konstellation-1}, so applications are tested
+against the release mainnet is about to run.
+
+One binary and one codebase serve every network. \code{konstellationd} does not
 know which network it is on beyond the chain-id checks. Every difference
-between the testnet and the mainnet lives in that network's genesis file or in
+between the networks lives in that network's genesis file or in
 the deployment environment, and every such difference is enumerated in the
 engineering record (ENGINEERING \S18). Where this document
 gives a parameter that differs on testnet, it says so.
