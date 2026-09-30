@@ -83,7 +83,7 @@ IBC clients, connections, channels, ICS-20 & \code{ibc-go} \\
 Implemented in \code{konstellation} & Notes \\
 \midrule
 \code{app.go} wiring and ante-handler chain & the order of ante decorators is security-critical and is in audit scope \\
-\code{x/compliance} & allow/block lists enforced at the transaction boundary, timelock, emergency freeze, precompile, IBC receive gate (\dref{D6}, \S\ref{sec:compliance}) \\
+\code{x/compliance} & allow/block lists enforced at the transaction boundary and on every balance change, timelock, emergency freeze, precompile, IBC receive gate (\dref{D6}, \S\ref{sec:compliance}) \\
 \code{x/ratelimit} & IBC value-flow quotas; written because no rate limiter exists for \code{ibc-go} v11 (\dref{D15}, \S\ref{sec:rails}) \\
 Issuance function & the \dref{D4} curve, installed as the stock \code{x/mint} module's \code{MintFn} hook --- not a module \\
 Base-fee burn & an application-level EndBlock step (\dref{D5}) \\
