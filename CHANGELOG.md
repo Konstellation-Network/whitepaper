@@ -6,6 +6,22 @@ with a new version.
 
 ## Unreleased
 
+### Freeze semantics as built — 2026-09-30
+
+konstellation #15 (merged 2026-09-29) added bank-level enforcement of the
+block list (STATUS P20), so the compliance section's "a freeze does not
+immobilise the balance … planned before mainnet" was out of date.
+
+- Compliance section: nothing can leave a frozen address and no party's
+  transaction can fund it. Enforcement is at submission (including a
+  token-precompile transfer naming a frozen address), at the bank level and
+  at the EVM state commit. A frozen contract cannot stake, vote or redirect
+  rewards. Protocol completions may still credit a frozen address, so its
+  balance can rise, never fall. The `[legal review]` marker on the section
+  is unchanged.
+- The precompile paragraph, the architecture table and the D6 row in the
+  appendix now match.
+
 ### Three networks, four launch validators — 2026-09-29
 
 D7 re-decided by the founder on 2026-09-29 (Solana-style network split):
