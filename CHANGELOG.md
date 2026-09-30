@@ -6,6 +6,24 @@ with a new version.
 
 ## Unreleased
 
+### Three networks, four launch validators — 2026-09-29
+
+D7 re-decided by the founder on 2026-09-29 (Solana-style network split):
+
+- Validator set: **four** foundation-run validators at genesis on
+  `konstellation-1` and `testnet-1` (was ten); `max_validators` stays 30
+  (twenty-six seats empty at genesis); admission permissioned via D16,
+  moving to permissionless by governance. Every "ten" in the validator,
+  overview, architecture, compliance, security, tokenomics and appendix
+  sections updated.
+- New network `devnet-1` (EIP-155 56672) for application developers: one
+  foundation validator, same release as mainnet, faucet-fed, rarely reset.
+  Naming table and a new "Networks" subsection (§ overview) describe all
+  three; `testnet-1` is described as the validator/operations rehearsal
+  network where releases land first.
+- Upgrade order stated: `testnet-1` → `devnet-1` (1–2 weeks before mainnet)
+  → `konstellation-1` (security section).
+
 ### v1.0 (draft) — 2026-09-20
 
 First complete draft. Source in `src/whitepaper.tex` + `src/sections/*.tex`.
