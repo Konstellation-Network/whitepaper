@@ -59,3 +59,7 @@ PDF as a workflow artifact, and refuses any PR that modifies a file already in
    and refuses to overwrite an existing version.
 4. Move the `Unreleased` entry in `CHANGELOG.md` under the version heading.
 5. Tag the commit `vX.Y`.
+
+## License
+
+The whitepaper (LaTeX source and PDF releases) is licensed under [CC BY-ND 4.0](LICENSE): you may share it with attribution, but not distribute modified versions. The Konstellation name and logo are trademarks and are not licensed; see the [trademark policy](https://github.com/Konstellation-Network/.github).
